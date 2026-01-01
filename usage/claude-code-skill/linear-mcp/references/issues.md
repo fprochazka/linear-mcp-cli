@@ -24,9 +24,9 @@ linear-mcp list_issues --team "Engineering" --state "In Progress" --assignee "me
 | Option | Description |
 |--------|-------------|
 | `--assignee` | User ID, name, email, or `"me"` |
-| `--team` | Team name or ID |
-| `--state` | State name or ID |
-| `--project` | Project name or ID |
+| `--team` | **Exact** team name or ID (not issue prefix abbreviations) |
+| `--state` | **Exact** status name or ID (not types like "started") |
+| `--project` | **Exact** project name or ID (partial names don't work) |
 | `--cycle` | Cycle name or ID |
 | `--label` | Label name or ID |
 | `--query` | Search in title/description |

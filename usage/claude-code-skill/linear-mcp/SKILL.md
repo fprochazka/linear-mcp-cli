@@ -26,9 +26,19 @@ Most parameters accept human-readable names. The MCP server resolves them to int
 
 | Parameter | Accepts | Example |
 |-----------|---------|---------|
-| `--team`, `--project`, `--state`, `--cycle`, `--milestone`, `--label`, `--initiative` | Name or ID | `--team "Engineering"` |
+| `--team`, `--project`, `--state`, `--cycle`, `--milestone`, `--label`, `--initiative` | **Exact full name** (case-insensitive) or ID | `--team "Engineering"` |
 | `--assignee`, `--member`, `--lead` | User ID, name, email, or `"me"` | `--assignee "me"` |
 | `--labels` (array) | Names or IDs | `'["bug", "critical"]'` |
+
+**Important: Use exact full names, not abbreviations or partial matches.**
+
+| Filter | Works | Doesn't work |
+|--------|-------|--------------|
+| `--team` | `"Frontend Engineering"` (full name) | `"FE"` (issue prefix) |
+| `--project` | `"API Redesign (Q1 2025)"` (full name) | `"API Redesign"` (partial) |
+| `--state` | `"In Progress"` (status name) | `"started"` (status type) |
+
+To find correct names, first run `list_teams`, `list_projects`, or `list_issue_statuses --team "Team Name"`.
 
 **Internal UUID required** (from prior `list_*` or `get_*` calls):
 
