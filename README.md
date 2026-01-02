@@ -40,7 +40,7 @@ For users of Claude Code, a skill is available that teaches Claude how to effici
 
 ```bash
 # Copy the skill directory to your global Claude Code skills directory
-cp -r usage/claude-code-skill/linear-mcp ~/.claude/skills/
+cp -r usage/claude-code-skill/linear-mcp-cli ~/.claude/skills/
 ```
 
 **For Claude Code (CLI)** - Project-specific installation (available only in this project):
@@ -48,12 +48,12 @@ cp -r usage/claude-code-skill/linear-mcp ~/.claude/skills/
 ```bash
 # Copy the skill directory to your project's .claude/skills directory
 mkdir -p .claude/skills
-cp -r usage/claude-code-skill/linear-mcp .claude/skills/
+cp -r usage/claude-code-skill/linear-mcp-cli .claude/skills/
 ```
 
 **For Claude.ai or Claude Desktop** - Use the packaged skill file:
 
-The `linear-mcp.skill` file can be uploaded through Settings > Capabilities > Skills.
+The `linear-mcp-cli.skill` file can be uploaded through Settings > Capabilities > Skills.
 
 After installation, Claude will automatically use the skill when working with Linear.
 
@@ -67,7 +67,7 @@ Add the following to your `~/.claude/settings.json`:
 {
   "permissions": {
     "allow": [
-      "Skill(linear-mcp)",
+      "Skill(linear-mcp-cli)",
       "Bash(linear-mcp:*)"
     ]
   }

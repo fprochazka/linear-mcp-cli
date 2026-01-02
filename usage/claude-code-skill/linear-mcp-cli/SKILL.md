@@ -1,5 +1,5 @@
 ---
-name: linear-mcp
+name: linear-mcp-cli
 description: CLI for querying Linear (issues, projects, teams, documents, comments). Use when managing issues, creating/updating tasks, exploring projects, or integrating Linear with workflows. Triggered by requests involving Linear data, issue tracking, or project management.
 ---
 
