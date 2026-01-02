@@ -7,7 +7,6 @@ import yaml
 from pydantic import BaseModel, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-
 # Linear MCP Server URL
 LINEAR_MCP_URL = "https://mcp.linear.app/mcp"
 

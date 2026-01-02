@@ -81,6 +81,24 @@ def format_tool_result(result: CallToolResult) -> str:
     return "\n".join(output_parts)
 
 
+class McpError(Exception):
+    """Base exception for MCP client errors."""
+
+    pass
+
+
+class McpConnectionError(McpError):
+    """Error connecting to the MCP server."""
+
+    pass
+
+
+class McpAuthenticationError(McpError):
+    """Authentication failed with the MCP server."""
+
+    pass
+
+
 def get_tools(config: Config) -> list[dict[str, Any]]:
     """Get MCP tools, using cache if available.
 
@@ -89,6 +107,9 @@ def get_tools(config: Config) -> list[dict[str, Any]]:
 
     Returns:
         List of tool dictionaries with name, description, and inputSchema.
+
+    Raises:
+        McpError: If fetching tools fails and no cache is available.
     """
     if not config.linear.api_key:
         return []
@@ -104,17 +125,14 @@ def get_tools(config: Config) -> list[dict[str, Any]]:
         async with client.connect():
             return await client.list_tools()
 
-    try:
-        tools = asyncio.run(_fetch())
-        tools_data = [
-            {
-                "name": t.name,
-                "description": t.description,
-                "inputSchema": t.inputSchema,
-            }
-            for t in tools
-        ]
-        save_to_cache(tools_data)
-        return tools_data
-    except Exception:
-        return []
+    tools = asyncio.run(_fetch())
+    tools_data = [
+        {
+            "name": t.name,
+            "description": t.description,
+            "inputSchema": t.inputSchema,
+        }
+        for t in tools
+    ]
+    save_to_cache(tools_data)
+    return tools_data

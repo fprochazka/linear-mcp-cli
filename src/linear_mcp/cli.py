@@ -2,17 +2,67 @@
 
 import asyncio
 import json
+import logging
 import sys
 from pathlib import Path
 from typing import Any
 
 import click
+import httpx
 from rich.console import Console
 from rich.json import JSON
 from rich.panel import Panel
 
 from .client import LinearMcpClient, format_tool_result, get_tools
 from .config import LINEAR_MCP_URL, get_config_path, load_config
+
+
+def unwrap_exception(exc: BaseException) -> BaseException:
+    """Unwrap ExceptionGroup/BaseExceptionGroup to get the root cause."""
+    while isinstance(exc, BaseExceptionGroup) and len(exc.exceptions) == 1:
+        exc = exc.exceptions[0]
+    return exc
+
+
+def format_error(exc: BaseException) -> str:
+    """Format an exception into a user-friendly error message."""
+    exc = unwrap_exception(exc)
+
+    # Handle common HTTP/connection errors
+    if isinstance(exc, httpx.HTTPStatusError):
+        status = exc.response.status_code
+        if status == 401:
+            return "Authentication failed. Check your LINEAR_API_KEY or run 'linear-mcp init'."
+        if status == 403:
+            return "Access denied. Your API key may lack required permissions."
+        if status == 404:
+            return "Resource not found. The MCP server endpoint may have changed."
+        if status == 429:
+            return "Rate limited. Please wait before making more requests."
+        if status >= 500:
+            return f"Linear server error ({status}). Try again later."
+        return f"HTTP error {status}: {exc.response.text[:200] if exc.response.text else 'No details'}"
+
+    if isinstance(exc, httpx.ConnectError):
+        return "Connection failed. Check your internet connection or Linear server status."
+
+    if isinstance(exc, httpx.TimeoutException):
+        return "Request timed out. The server may be slow or unresponsive."
+
+    if isinstance(exc, asyncio.TimeoutError):
+        return "Operation timed out. Try increasing the timeout in your config."
+
+    # Handle ExceptionGroup with multiple exceptions
+    if isinstance(exc, BaseExceptionGroup):
+        messages = [format_error(e) for e in exc.exceptions]
+        return "; ".join(messages)
+
+    # Default: use the exception message
+    msg = str(exc)
+    if not msg or msg == str(type(exc).__name__):
+        return f"{type(exc).__name__}"
+    return msg
+
 
 console = Console()
 error_console = Console(stderr=True)
@@ -96,7 +146,13 @@ class DynamicGroup(click.Group):
         if config is None:
             return {}
 
-        tools = get_tools(config)
+        try:
+            tools = get_tools(config)
+        except BaseException as e:
+            error_console.print(f"[red]Error fetching tools: {format_error(e)}[/red]")
+            error_console.print("[dim]Using cached tools if available, or run with -v for details.[/dim]")
+            return {}
+
         self._tools_cache = {t["name"]: t for t in tools}
         return self._tools_cache
 
@@ -197,8 +253,8 @@ class DynamicGroup(click.Group):
                 try:
                     with console.status(f"[bold green]Calling {tool_name}...[/bold green]"):
                         result = asyncio.run(_call())
-                except Exception as e:
-                    error_console.print(f"[red]Error: {e}[/red]")
+                except BaseException as e:
+                    error_console.print(f"[red]Error: {format_error(e)}[/red]")
                     if verbose:
                         error_console.print_exception()
                     sys.exit(1)
@@ -242,7 +298,7 @@ class DynamicGroup(click.Group):
     "-v",
     is_flag=True,
     default=False,
-    help="Show full tracebacks on error",
+    help="Enable debug logging and show full tracebacks on error",
 )
 @click.pass_context
 def cli(ctx: click.Context, config: Path | None, verbose: bool):
@@ -254,6 +310,12 @@ def cli(ctx: click.Context, config: Path | None, verbose: bool):
     ctx.ensure_object(dict)
     ctx.obj["config_path"] = config
     ctx.obj["verbose"] = verbose
+
+    # Configure logging level based on verbose flag
+    if verbose:
+        logging.basicConfig(level=logging.DEBUG, format="%(levelname)s: %(name)s: %(message)s")
+    else:
+        logging.basicConfig(level=logging.WARNING)
 
 
 @cli.command("init")
