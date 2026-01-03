@@ -40,13 +40,13 @@ linear-mcp list_issues --team "Engineering" --state "In Progress" --assignee "me
 Get detailed issue info including attachments and git branch name.
 
 ```bash
-linear-mcp get_issue --id "issue-uuid-here"
+linear-mcp get_issue --id "ABC-123"
 
 # Include relations (blocking, related, duplicate)
-linear-mcp get_issue --id "issue-uuid-here" --includeRelations true
+linear-mcp get_issue --id "ABC-123" --includeRelations true
 ```
 
-**Note:** `--id` requires the internal UUID, not the issue identifier (ABC-123). Get the UUID from `list_issues` output.
+**Note:** `--id` accepts either the internal UUID or the issue identifier (e.g., `ABC-123`).
 
 ## create_issue
 
@@ -100,19 +100,19 @@ Update an existing issue.
 
 ```bash
 # Change state
-linear-mcp update_issue --id "issue-uuid" --state "Done"
+linear-mcp update_issue --id "ABC-123" --state "Done"
 
 # Reassign
-linear-mcp update_issue --id "issue-uuid" --assignee "jane@example.com"
+linear-mcp update_issue --id "ABC-123" --assignee "jane@example.com"
 
 # Update multiple fields
-linear-mcp update_issue --id "issue-uuid" \
+linear-mcp update_issue --id "ABC-123" \
   --state "In Progress" \
   --priority 1 \
   --labels '["urgent", "bug"]'
 ```
 
-**Note:** `--id` requires the internal UUID.
+**Note:** `--id` accepts either the internal UUID or the issue identifier (e.g., `ABC-123`).
 
 ## Issue Relations
 
@@ -132,18 +132,18 @@ linear-mcp create_issue --team "Eng" --title "Related work" \
   --relatedTo '["ABC-50", "ABC-51"]'
 
 # Mark as duplicate
-linear-mcp update_issue --id "issue-uuid" --duplicateOf "ABC-123"
+linear-mcp update_issue --id "ABC-456" --duplicateOf "ABC-123"
 ```
 
 **WARNING for update_issue:** Relation arrays REPLACE all existing relations. Include ALL issues you want in the relation, not just new ones. Omit the parameter entirely to leave existing relations unchanged.
 
 ```bash
 # WRONG: This removes existing blocks and only keeps DEF-456
-linear-mcp update_issue --id "issue-uuid" --blocks '["DEF-456"]'
+linear-mcp update_issue --id "ABC-123" --blocks '["DEF-456"]'
 
 # RIGHT: Include all issues that should block
-linear-mcp update_issue --id "issue-uuid" --blocks '["ABC-123", "DEF-456"]'
+linear-mcp update_issue --id "ABC-123" --blocks '["DEF-123", "DEF-456"]'
 
 # RIGHT: Omit to leave unchanged
-linear-mcp update_issue --id "issue-uuid" --state "Done"
+linear-mcp update_issue --id "ABC-123" --state "Done"
 ```

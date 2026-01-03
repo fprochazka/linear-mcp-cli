@@ -189,6 +189,9 @@ class DynamicGroup(click.Group):
         properties = schema.get("properties", {})
         required = set(schema.get("required", []))
 
+        # Map from Click's lowercased param name back to original MCP property name
+        param_name_map = {}
+
         for prop_name, prop_def in properties.items():
             prop_type = prop_def.get("type")
             prop_desc = prop_def.get("description", "")
@@ -205,9 +208,14 @@ class DynamicGroup(click.Group):
             elif default is not None:
                 cli_default = default
 
+            # Click lowercases parameter names, so we need to map back
+            cli_param_name = prop_name.replace("_", "-")
+            click_internal_name = cli_param_name.replace("-", "_").lower()
+            param_name_map[click_internal_name] = prop_name
+
             # Create option
             option = click.Option(
-                param_decls=[f"--{prop_name.replace('_', '-')}"],
+                param_decls=[f"--{cli_param_name}"],
                 type=click_type,
                 required=is_required and default is None,
                 default=cli_default,
@@ -225,7 +233,7 @@ class DynamicGroup(click.Group):
             )
         )
 
-        def make_callback(tool_name: str, prop_defs: dict):
+        def make_callback(tool_name: str, prop_defs: dict, name_map: dict):
             @click.pass_context
             def callback(ctx: click.Context, **kwargs):
                 as_json = kwargs.pop("as_json", False)
@@ -235,8 +243,8 @@ class DynamicGroup(click.Group):
                 arguments = {}
                 for key, value in kwargs.items():
                     if value is not None:
-                        # Convert back to original param name
-                        original_key = key.replace("-", "_")
+                        # Map Click's lowercased param name back to original MCP property name
+                        original_key = name_map.get(key, key)
                         prop_type = prop_defs.get(original_key, {}).get("type")
                         if prop_type in ("array", "object"):
                             arguments[original_key] = parse_value(str(value), prop_type)
@@ -280,7 +288,7 @@ class DynamicGroup(click.Group):
         tool_name = tool["name"]
         return click.Command(
             name=tool_name,
-            callback=make_callback(tool_name, properties),
+            callback=make_callback(tool_name, properties, param_name_map),
             params=params,
             help=tool.get("description"),
         )
