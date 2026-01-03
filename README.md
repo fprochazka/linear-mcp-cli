@@ -22,8 +22,8 @@ cd linear-mcp-cli
 # Install with Poetry
 poetry install
 
-# Or install in development mode
-pipx install -e .
+# Or install in development mode (use -f to force reinstall)
+pipx install -f -e .
 ```
 
 ## Claude Code Skill (Optional)
