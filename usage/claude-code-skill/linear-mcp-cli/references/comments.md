@@ -15,17 +15,14 @@ linear-mcp list_comments --issueId "issue-uuid"
 Add a comment to an issue.
 
 ```bash
-# Basic comment
-linear-mcp create_comment --issueId "issue-uuid" --body "Looking into this now."
-
-# Markdown comment
+# Write comment to file first, then use $(cat ...) - see "Content Preparation Workflow" in SKILL.md
 linear-mcp create_comment --issueId "issue-uuid" \
-  --body "Fixed in PR #123.\n\n**Changes:**\n- Updated auth flow\n- Added tests"
+  --body "$(cat /tmp/comment.md)"
 
 # Reply to existing comment
 linear-mcp create_comment --issueId "issue-uuid" \
   --parentId "comment-uuid" \
-  --body "Good point, I'll address that."
+  --body "$(cat /tmp/reply.md)"
 ```
 
 | Option | Description |

@@ -47,13 +47,13 @@ linear-mcp get_document --id "my-document-slug"
 Create a new document.
 
 ```bash
-# Basic
+# Basic (no content)
 linear-mcp create_document --title "Meeting Notes" --project "Engineering"
 
-# With content
+# With content (write to file first, see "Content Preparation Workflow" in SKILL.md)
 linear-mcp create_document --title "Architecture Decision" \
   --project "Backend Refactor" \
-  --content "# ADR-001\n\n## Context\n\n..."
+  --content "$(cat /tmp/document-content.md)"
 
 # With icon
 linear-mcp create_document --title "Team Handbook" \
@@ -75,9 +75,9 @@ linear-mcp create_document --title "Team Handbook" \
 Update an existing document.
 
 ```bash
-# Update content
+# Update content (write to file first, see "Content Preparation Workflow" in SKILL.md)
 linear-mcp update_document --id "document-uuid" \
-  --content "# Updated content\n\n..."
+  --content "$(cat /tmp/updated-content.md)"
 
 # Update title
 linear-mcp update_document --id "document-uuid" --title "New Title"

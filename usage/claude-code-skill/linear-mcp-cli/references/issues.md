@@ -53,12 +53,12 @@ linear-mcp get_issue --id "ABC-123" --includeRelations true
 Create a new issue.
 
 ```bash
-# Basic
+# Basic (no description)
 linear-mcp create_issue --team "Engineering" --title "Fix login bug"
 
-# With details
+# With description (write to file first, see "Content Preparation Workflow" in SKILL.md)
 linear-mcp create_issue --team "Engineering" --title "Fix login bug" \
-  --description "Users cannot log in with SSO" \
+  --description "$(cat /tmp/issue-description.md)" \
   --assignee "me" \
   --priority 2 \
   --state "To Do" \
@@ -110,6 +110,10 @@ linear-mcp update_issue --id "ABC-123" \
   --state "In Progress" \
   --priority 1 \
   --labels '["urgent", "bug"]'
+
+# Update description (write to file first, see "Content Preparation Workflow" in SKILL.md)
+linear-mcp update_issue --id "ABC-123" \
+  --description "$(cat /tmp/issue-description.md)"
 ```
 
 **Note:** `--id` accepts either the internal UUID or the issue identifier (e.g., `ABC-123`).

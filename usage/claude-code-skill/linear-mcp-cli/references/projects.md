@@ -57,9 +57,9 @@ Create a new project.
 # Basic
 linear-mcp create_project --team "Engineering" --name "Q2 Roadmap"
 
-# With details
+# With description (write to file first, see "Content Preparation Workflow" in SKILL.md)
 linear-mcp create_project --team "Engineering" --name "Q2 Roadmap" \
-  --description "Engineering goals for Q2" \
+  --description "$(cat /tmp/project-description.md)" \
   --summary "Q2 engineering initiatives" \
   --lead "me" \
   --priority 2
@@ -105,6 +105,10 @@ linear-mcp update_project --id "project-uuid" --lead "jane@example.com"
 # Update dates
 linear-mcp update_project --id "project-uuid" \
   --targetDate "2024-07-15"
+
+# Update description (write to file first, see "Content Preparation Workflow" in SKILL.md)
+linear-mcp update_project --id "project-uuid" \
+  --description "$(cat /tmp/project-description.md)"
 ```
 
 **Note:** `--id` requires the internal UUID from `list_projects` or `get_project`.

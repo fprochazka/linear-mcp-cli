@@ -75,6 +75,25 @@ Pass arrays as JSON strings:
 | `3` | Normal | Medium |
 | `4` | Low | Low |
 
+## Content Preparation Workflow (REQUIRED for long content)
+
+**For multi-line or markdown content (descriptions, comments, documents), you MUST:**
+
+1. **Write content to a markdown file first** (e.g., `/tmp/content.md`)
+2. **Use `$(cat file.md)` to pass it to the CLI**
+
+This prevents shell escaping issues, preserves formatting, and allows user review before submission.
+
+| Parameter | Example |
+|-----------|---------|
+| `--description` | `--description "$(cat /tmp/desc.md)"` |
+| `--body` | `--body "$(cat /tmp/comment.md)"` |
+| `--content` | `--content "$(cat /tmp/doc.md)"` |
+
+**Short, single-line values** (titles, names, summaries) can be passed directly as strings.
+
+**DO NOT pass multi-line content or markdown directly as string arguments.**
+
 ## Getting Command Help
 
 ```bash
