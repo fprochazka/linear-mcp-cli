@@ -275,7 +275,7 @@ class DynamicGroup(click.Group):
                 output = format_tool_result(result)
 
                 if as_json:
-                    console.print(output, markup=False)
+                    print(output)  # Use plain print to avoid Rich's text wrapping
                 else:
                     try:
                         data = json.loads(output)
