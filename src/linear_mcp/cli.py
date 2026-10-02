@@ -104,6 +104,9 @@ def parse_value(value: str, json_type: str | list | None) -> Any:
 
     # Handle nullable types
     if isinstance(json_type, list):
+        # An option is text, so the literal "null" is how a command clears a nullable property
+        if value == "null" and "null" in json_type:
+            return None
         non_null_types = [t for t in json_type if t != "null"]
         if non_null_types:
             json_type = non_null_types[0]
@@ -246,7 +249,7 @@ class DynamicGroup(click.Group):
                         # Map Click's lowercased param name back to original MCP property name
                         original_key = name_map.get(key, key)
                         prop_type = prop_defs.get(original_key, {}).get("type")
-                        if prop_type in ("array", "object"):
+                        if prop_type in ("array", "object") or isinstance(prop_type, list):
                             arguments[original_key] = parse_value(str(value), prop_type)
                         else:
                             arguments[original_key] = value
