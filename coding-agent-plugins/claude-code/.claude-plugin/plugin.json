@@ -1,0 +1,9 @@
+{
+  "name": "linear-mcp-cli",
+  "version": "0.1.0",
+  "description": "Skill for querying and updating Linear with the linear-mcp CLI",
+  "author": {
+    "name": "Filip Procházka"
+  },
+  "skills": "./skills/"
+}

@@ -1,18 +1,18 @@
 # Documentation Reference
 
-## search_documentation
+## search-documentation
 
 Search Linear's official documentation.
 
 ```bash
 # Search for workflow info
-linear-mcp search_documentation --query "workflow states"
+linear-mcp search-documentation --query "workflow states"
 
 # Search for integration docs
-linear-mcp search_documentation --query "github integration"
+linear-mcp search-documentation --query "github integration"
 
 # Search for API info
-linear-mcp search_documentation --query "webhooks"
+linear-mcp search-documentation --query "webhooks"
 ```
 
 | Option | Description |

@@ -1,0 +1,18 @@
+{
+  "name": "fprochazka-linear-mcp-cli",
+  "description": "CLI for Linear's official MCP server, with a skill for Claude Code",
+  "owner": {
+    "name": "Filip Procházka"
+  },
+  "plugins": [
+    {
+      "name": "linear-mcp-cli",
+      "description": "Skill for querying and updating Linear with the linear-mcp CLI",
+      "version": "0.1.0",
+      "author": {
+        "name": "Filip Procházka"
+      },
+      "source": "./coding-agent-plugins/claude-code"
+    }
+  ]
+}

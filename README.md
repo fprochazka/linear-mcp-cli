@@ -91,26 +91,18 @@ The `save_*`, `delete_*`, `create_*`, `retire_*`, `restore_*`, `mark_*`, `share_
 - The default read timeout is 100 s instead of 300 s, so a slow call ends before an agent's 120 s Bash limit. Raise it with `LINEAR_MCP_SERVERS__LINEAR__SSE_READ_TIMEOUT` or the `servers.linear.sse_read_timeout` config key.
 - The old tool cache `~/.cache/linear-mcp/tools.json` is no longer used and can be deleted; the new one is `~/.cache/linear-mcp/linear.json`.
 
-## Claude Code Skill (Optional)
+## Claude Code skill
 
-For users of Claude Code, a skill is available that teaches Claude how to efficiently use the `linear-mcp` CLI tool. The skill includes:
-
-- Command reference for all Linear operations
-- Common workflow examples for issues, projects, teams
-- Parameter syntax (priority values, array formats)
-
-### Installing the Skill
-
-**For Claude Code (CLI)** - Global installation (available in all projects):
+The repo is also a Claude Code plugin marketplace (`fprochazka-linear-mcp-cli`) with one plugin, `linear-mcp-cli`. Its skill teaches an agent the commands for issues, projects, teams, users, labels, documents and comments, how names resolve to IDs, how to pass long Markdown bodies from files, and how to avoid creating duplicates.
 
 ```bash
-# Copy the skill directory to your global Claude Code skills directory
-cp -r usage/claude-code-skill/linear-mcp-cli ~/.claude/skills/
+claude plugin marketplace add https://github.com/fprochazka/linear-mcp-cli.git
+claude plugin install linear-mcp-cli@fprochazka-linear-mcp-cli
 ```
 
-**For Claude.ai or Claude Desktop** - Use the packaged skill file:
+If you copied the skill by hand before (`~/.claude/skills/linear-mcp-cli`), remove that copy once the plugin is installed; otherwise Claude loads two skills with the same name.
 
-The `linear-mcp-cli.skill` file can be uploaded through Settings > Capabilities > Skills.
+The skill allows the read-only commands without a prompt: every `get-*`, `list-*` and `search-*` command, `schema`, `config` (which masks the key) and `--help`. Of the commands that change your workspace, only the `--help` of `save-issue`, `save-comment`, `save-document`, `save-project` and `save-issue-label` is allowed; running them asks for permission. The granted read commands also accept `--arg-file` and `--input-json @file`, so an agent can send the content of a local file to Linear (as a search query or filter) without a prompt.
 
 ## Development
 
