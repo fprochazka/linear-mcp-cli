@@ -22,3 +22,6 @@ build/
 
 # Config with secrets
 .linear-mcp.yaml
+
+# Claude Code
+.claude/settings.local.json
