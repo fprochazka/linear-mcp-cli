@@ -1,30 +1,95 @@
 # Linear MCP CLI
 
-A command-line interface for querying Linear using the [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) server. Each Linear MCP tool is exposed as a direct CLI command.
+A command-line interface for [Linear](https://linear.app) through its official [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) server at `https://mcp.linear.app/mcp`. Each tool of the server (issues, projects, teams, documents, comments, labels, cycles, ...) is a command.
 
-## Features
-
-- Direct CLI commands for each Linear MCP tool (issues, projects, teams, documents, etc.)
-- Auto-generated parameters from MCP tool schemas with proper type handling
-- 1-hour cache for tool schemas to speed up subsequent invocations
-- Configuration via YAML file or environment variables
-- Rich terminal output with JSON pretty-printing
+Built on [mcp-to-cli-kit](https://pypi.org/project/mcp-to-cli-kit/), which turns every MCP tool into a subcommand with typed options compiled from the tool's input schema.
 
 ## Installation
 
-Requires Python 3.11+.
+Requires Python 3.11+ and uv. The kit comes from PyPI as a regular dependency.
 
 ```bash
-# Clone the repository
-git clone <repo-url>
+git clone https://github.com/fprochazka/linear-mcp-cli.git
 cd linear-mcp-cli
 
-# Install with Poetry
-poetry install
-
-# Or install in development mode (use -f to force reinstall)
-pipx install -f -e .
+# Install globally (editable - updates after git pull)
+uv tool install -e .
 ```
+
+## Configuration
+
+The CLI needs a Linear API key, which you create at https://linear.app/settings/api. Either export it:
+
+```bash
+export LINEAR_API_KEY="lin_api_..."
+```
+
+or put it in `~/.config/linear-mcp/config.yaml` (or a file passed with `--config PATH`); keep that file readable by you only (`chmod 600`):
+
+```yaml
+servers:
+  linear:
+    headers:
+      Authorization: "Bearer lin_api_..."
+```
+
+The built-in default sends `Authorization: Bearer ${LINEAR_API_KEY}`, with the variable expanded when the server is contacted. An `Authorization` header in the file replaces that template, so the file wins over the variable. Without either, a command that contacts Linear exits 2 and names the variable; `--help` still works from the tool cache.
+
+Other keys and their environment variables:
+
+```yaml
+servers:
+  linear:
+    timeout: 30            # seconds to connect and to send a request
+    sse_read_timeout: 100  # seconds to wait for an answer
+```
+
+```bash
+export LINEAR_MCP_SERVERS__LINEAR__SSE_READ_TIMEOUT=200
+```
+
+`linear-mcp config` prints the effective configuration without contacting Linear, with the key masked.
+
+## Usage
+
+```bash
+linear-mcp --help                                  # the tools
+linear-mcp get-issue --help                        # one tool's full description and options
+linear-mcp schema get-issue                        # the tool's raw input schema
+
+linear-mcp list-teams
+linear-mcp list-issue-statuses --team "<team name or id>"
+linear-mcp list-issues --assignee me --limit 10
+linear-mcp list-issues --team "<team>" --state "In Progress" --order-by updatedAt
+linear-mcp get-issue --id ABC-123 --include-relations
+linear-mcp list-projects --limit 5
+linear-mcp get-user --query me
+```
+
+- Commands are kebab case (`get-issue`). The tool's own name (`get_issue`) still works.
+- Options are kebab case (`--include-relations`). The schema's own spelling (`--includeRelations`) and the snake case are accepted too.
+- An option you leave out is not sent; the server applies its default. Booleans are `--x` / `--no-x`. Arrays are repeated options or one JSON literal; objects take a JSON literal.
+- `--input-json` passes all arguments as one JSON object; `--arg-file NAME=PATH` reads one value from a file, which suits long Markdown bodies (`--arg-file body=comment.md`).
+- Under an AI agent, or with `--json`, the result is printed exactly as the server sent it. Otherwise, or with `--pretty`, JSON is indented. Several content items become one JSON array.
+- Exit codes: 0 success, 1 the tool reported an error, 2 a usage or config error, 3 the server could not be reached.
+- The tool list is cached for an hour in `~/.cache/linear-mcp/linear.json`; `--refresh-tools` fetches it again. `-v` and `-vv` log to stderr, with the key redacted.
+
+The `save_*`, `delete_*`, `create_*`, `retire_*`, `restore_*`, `mark_*`, `share_*` and `unshare_*` tools change your Linear workspace.
+
+## Changes from the previous version
+
+- The config shape changed. The old `linear.api_key` and `mcp_server:` keys are gone; a config file that still uses them fails with "linear: Extra inputs are not permitted" (exit 2). Put the key into `servers.linear.headers.Authorization` as `Bearer <key>`, as shown above. The old environment overrides `LINEAR_MCP_LINEAR__API_KEY`, `LINEAR_MCP_MCP_SERVER__TIMEOUT` and `LINEAR_MCP_MCP_SERVER__SSE_READ_TIMEOUT` are ignored too; use `LINEAR_API_KEY` and `LINEAR_MCP_SERVERS__LINEAR__TIMEOUT` / `LINEAR_MCP_SERVERS__LINEAR__SSE_READ_TIMEOUT` (or any other `LINEAR_MCP_SERVERS__LINEAR__*` key). With `-v` the CLI lists the variables it ignored.
+- An `Authorization` header in the config file now wins over `LINEAR_API_KEY`; before, the variable won.
+- `linear-mcp init` is gone. Create the file by hand or export `LINEAR_API_KEY`.
+- `linear-mcp config` prints JSON (with the key masked) instead of a rich panel, and also shows the config file, the env prefix and the env variables that were applied.
+- `./.linear-mcp.yaml` in the working directory is no longer read. Pass it with `--config` instead.
+- `-c` for `--config` is gone. `-v` now logs to stderr instead of showing tracebacks.
+- Commands are kebab case (`get-issue`) and options too (`--include-relations`). The old spellings (`get_issue`, `--includeRelations`) still work.
+- Booleans are `--x` / `--no-x`; the old `--x true` / `--x false` form is rejected. This affects every `--include*` option and `--hasReleaseNotes`, `--isDiffHidden`, `--isGroup`, `--isProduction`, `--read`, `--shared` and `--unreadOnly`.
+- Output is plain JSON without rich, so it never wraps and pipes into `jq`. Defaults from the schemas are no longer sent.
+- Exit codes: usage and config errors exit 2 and an unreachable server exits 3. Previously every error exited 1.
+- The default read timeout is 100 s instead of 300 s, so a slow call ends before an agent's 120 s Bash limit. Raise it with `LINEAR_MCP_SERVERS__LINEAR__SSE_READ_TIMEOUT` or the `servers.linear.sse_read_timeout` config key.
+- The old tool cache `~/.cache/linear-mcp/tools.json` is no longer used and can be deleted; the new one is `~/.cache/linear-mcp/linear.json`.
 
 ## Claude Code Skill (Optional)
 
@@ -43,177 +108,18 @@ For users of Claude Code, a skill is available that teaches Claude how to effici
 cp -r usage/claude-code-skill/linear-mcp-cli ~/.claude/skills/
 ```
 
-**For Claude Code (CLI)** - Project-specific installation (available only in this project):
-
-```bash
-# Copy the skill directory to your project's .claude/skills directory
-mkdir -p .claude/skills
-cp -r usage/claude-code-skill/linear-mcp-cli .claude/skills/
-```
-
 **For Claude.ai or Claude Desktop** - Use the packaged skill file:
 
 The `linear-mcp-cli.skill` file can be uploaded through Settings > Capabilities > Skills.
 
-After installation, Claude will automatically use the skill when working with Linear.
-
-### Setting Default Permissions (Recommended)
-
-To improve the Claude Code experience, you can configure default permissions for `linear-mcp` commands. This eliminates the need to approve these read-only commands every time.
-
-Add the following to your `~/.claude/settings.json`:
-
-```json
-{
-  "permissions": {
-    "allow": [
-      "Skill(linear-mcp-cli)",
-      "Bash(linear-mcp:*)"
-    ]
-  }
-}
-```
-
-## Configuration
-
-### Option 1: Interactive setup
-
-```bash
-linear-mcp init
-```
-
-This prompts for your credentials and saves them to `~/.config/linear-mcp/config.yaml`:
-
-```
-Linear MCP CLI Configuration
-
-You can get your Linear API key from: https://linear.app/settings/api
-Linear API Key: ********
-
-Configuration saved to: ~/.config/linear-mcp/config.yaml
-```
-
-### Option 2: Environment variables
-
-```bash
-export LINEAR_API_KEY="your-api-key"
-```
-
-Environment variables take precedence over config file values.
-
-## Usage
-
-### List available commands
-
-```bash
-linear-mcp --help
-```
-
-### Get help for a specific command
-
-```bash
-linear-mcp create_issue --help
-```
-
-### Example commands
-
-```bash
-# List my issues
-linear-mcp list_issues --assignee "me"
-
-# List issues by state
-linear-mcp list_issues --state "In Progress" --team "Engineering"
-
-# Get issue details
-linear-mcp get_issue --id "ABC-123"
-
-# Create an issue
-linear-mcp create_issue --team "Engineering" --title "Fix login bug" \
-  --description "Users cannot log in with SSO"
-
-# Update issue state
-linear-mcp update_issue --id "ABC-123" --state "Done"
-
-# Add a comment
-linear-mcp create_comment --issue-id "ABC-123" --body "Fixed in PR #456"
-
-# List projects
-linear-mcp list_projects
-
-# List teams
-linear-mcp list_teams
-```
-
-### Output formats
-
-By default, output is pretty-printed JSON. Use `--json` for raw JSON output:
-
-```bash
-linear-mcp list_issues --assignee "me" --json
-```
-
-### Show current configuration
-
-```bash
-linear-mcp config
-```
-
-## Available Commands
-
-The CLI dynamically exposes all Linear MCP tools as commands:
-
-| Command | Description |
-|---------|-------------|
-| `list_issues` | List issues (filter by assignee, state, team, project, label) |
-| `get_issue` | Get issue details by ID |
-| `create_issue` | Create a new issue |
-| `update_issue` | Update an existing issue |
-| `list_projects` | List projects |
-| `get_project` | Get project details |
-| `create_project` | Create a new project |
-| `update_project` | Update an existing project |
-| `list_teams` | List teams |
-| `get_team` | Get team details |
-| `list_users` | List users |
-| `get_user` | Get user details |
-| `list_documents` | List documents |
-| `get_document` | Get document by ID/slug |
-| `create_document` | Create a new document |
-| `update_document` | Update a document |
-| `list_comments` | List issue comments |
-| `create_comment` | Add a comment to an issue |
-| `list_issue_labels` | List issue labels |
-| `create_issue_label` | Create a new label |
-| `list_issue_statuses` | List issue statuses for a team |
-| `get_issue_status` | Get issue status details |
-| `list_project_labels` | List project labels |
-| `list_cycles` | List cycles for a team |
-| `search_documentation` | Search Linear documentation |
-
-## Caching
-
-Tool schemas are cached for 1 hour at `~/.cache/linear-mcp/` to speed up CLI startup. Delete the cache directory to force a refresh.
-
-## Project Structure
-
-```
-src/linear_mcp/
-├── __init__.py   # Package metadata
-├── cache.py      # Tool schema caching
-├── cli.py        # CLI with dynamic command generation
-├── client.py     # MCP client with Bearer auth
-└── config.py     # Configuration management
-```
-
 ## Development
 
 ```bash
-# Install dev dependencies
-poetry install
-
-# Run linter with auto-fix and formatter
-source .venv/bin/activate && ruff check --fix . && ruff format .
+uv sync
+uv run ruff check . && uv run ruff format --check . && uv run mypy --strict src tests && uv run pytest
 ```
+
+To develop against a local checkout of the kit, run `uv pip install -e <path-to-mcp-to-cli-kit>` after `uv sync`; the next `uv sync` restores the PyPI release.
 
 ## License
 

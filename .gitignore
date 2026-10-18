@@ -18,6 +18,7 @@ build/
 # Cache
 .ruff_cache/
 .pytest_cache/
+.mypy_cache/
 
 # Config with secrets
 .linear-mcp.yaml

@@ -1,3 +1,3 @@
-"""Linear MCP CLI - A CLI wrapper for the Linear MCP Server."""
+"""Linear MCP CLI: the tools of Linear's MCP server as commands."""
 
-__version__ = "0.1.0"
+DISTRIBUTION = "linear-mcp-cli"
