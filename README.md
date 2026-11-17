@@ -6,7 +6,7 @@ Built on [mcp-to-cli-kit](https://pypi.org/project/mcp-to-cli-kit/), which turns
 
 ## Installation
 
-Requires Python 3.11+ and uv. The kit comes from PyPI as a regular dependency.
+Requires Python 3.12+ and uv. The kit comes from PyPI as a regular dependency.
 
 ```bash
 git clone https://github.com/fprochazka/linear-mcp-cli.git

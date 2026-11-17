@@ -5,7 +5,7 @@ description = "CLI for the tools of Linear's MCP server"
 authors = [
     {name = "Filip Prochazka"}
 ]
-requires-python = ">=3.11"
+requires-python = ">=3.12"
 dependencies = [
     "mcp-to-cli-kit>=0.2.0,<0.3",
 ]
@@ -22,7 +22,7 @@ packages = ["src/linear_mcp"]
 
 [tool.ruff]
 line-length = 120
-target-version = "py311"
+target-version = "py312"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "C4", "SIM"]
@@ -40,7 +40,7 @@ dev = [
 
 [tool.mypy]
 strict = true
-python_version = "3.11"
+python_version = "3.12"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
