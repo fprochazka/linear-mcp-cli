@@ -111,6 +111,8 @@ uv sync
 uv run ruff check . && uv run ruff format --check . && uv run mypy --strict src tests && uv run pytest
 ```
 
+CI runs the same checks on every push to master and on pull requests, with the tests on Python 3.12 to 3.15.
+
 To develop against a local checkout of the kit, run `uv pip install -e <path-to-mcp-to-cli-kit>` after `uv sync`; the next `uv sync` restores the PyPI release.
 
 ### Commit hooks
