@@ -7,7 +7,7 @@ authors = [
 ]
 requires-python = ">=3.12"
 dependencies = [
-    "mcp-to-cli-kit>=0.2.0,<0.3",
+    "mcp-to-cli-kit>=0.4.0,<0.5",
 ]
 
 [project.scripts]
