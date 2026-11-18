@@ -68,7 +68,7 @@ linear mcp list-projects --limit 5
 linear mcp get-user --query me
 ```
 
-- The options of the MCP commands (`--config`, `-v`, `--refresh-tools`, `--json`, `--pretty`) go after `mcp`: `linear mcp --config other.yaml get-issue --id ABC-123`.
+- `--json` and `--pretty` go after the tool name: `linear mcp get-issue --id ABC-123 --json`. `--config`, `-v` and `--refresh-tools` belong to `mcp` and go before the tool name: `linear mcp --config other.yaml get-issue --id ABC-123`.
 - Commands are kebab case (`get-issue`). The tool's own name (`get_issue`) still works.
 - Options are kebab case (`--include-relations`). The schema's own spelling (`--includeRelations`) and the snake case are accepted too.
 - An option you leave out is not sent; the server applies its default. Booleans are `--x` / `--no-x`. Arrays are repeated options or one JSON literal; objects take a JSON literal.

@@ -131,7 +131,7 @@ linear mcp save-issue --id "ABC-123" --input-json '{"duplicateOf": null}'
 - A call times out after 100 s; raise it with `LINEAR_MCP_SERVERS__LINEAR__SSE_READ_TIMEOUT=300`.
 - The API key comes from `LINEAR_API_KEY`, or from the `Authorization` header in `~/.config/linear-mcp/config.yaml`. A missing key exits 2 and names the variable. `linear mcp config` shows the effective configuration with the key masked.
 - The tool list is cached for an hour; `linear mcp --refresh-tools --help` fetches it again.
-- The options `--config`, `-v`, `--refresh-tools`, `--json` and `--pretty` go after `mcp`: `linear mcp --json get-issue --id ABC-123`.
+- `--json` and `--pretty` go after the tool name: `linear mcp get-issue --id ABC-123 --json`. `--config`, `-v` and `--refresh-tools` belong to `mcp` and go before the tool name: `linear mcp --config other.yaml get-issue --id ABC-123`.
 - `linear-mcp <command>` is the same command as `linear mcp <command>`, under its older name.
 
 ---
