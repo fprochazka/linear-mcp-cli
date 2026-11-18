@@ -44,6 +44,13 @@ def mcp_group() -> click.Group:
     return build_cli(MCP_BIN, DEFAULT_CONFIG, distribution=DISTRIBUTION)
 
 
+def watch_group() -> click.Group:
+    """`linear watch`, which follows issues through Linear's GraphQL API."""
+    from linear_mcp.watch.cli import watch
+
+    return watch
+
+
 def linear_group() -> click.Group:
     @click.group(name=BIN)
     @click.version_option(package_name=DISTRIBUTION, prog_name=BIN, message="%(prog)s %(version)s")
@@ -51,6 +58,9 @@ def linear_group() -> click.Group:
         """Linear from the command line."""
 
     mount(linear, "mcp", help="Call the tools of Linear's MCP server.", factory=mcp_group)
+    mount(
+        linear, "watch", help="Follow issues, views, teams and cycles, and report their changes.", factory=watch_group
+    )
     return linear
 
 

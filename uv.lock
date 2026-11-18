@@ -105,6 +105,18 @@ wheels = [
 ]
 
 [[package]]
+name = "cc-blackbox"
+version = "0.11.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "pyyaml" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/c2/0c/8fb5ce8780428461e2fc7a02037d3d095c563352fa103180457721452eac/cc_blackbox-0.11.0.tar.gz", hash = "sha256:89ea517dcbc289abc7015d1f5d1ba4ca2b109f56241f4a81348b6e69ee34b193", size = 186221, upload-time = "2026-11-17T15:15:46.264Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/f2/eb/4d736f129a5651a78a7c8509910dd760d898f014009e437405f4a227e594/cc_blackbox-0.11.0-py3-none-any.whl", hash = "sha256:4051cb5fd82247404a3c02779f7a256e5e5cd5dc85e7af58231a520571baa103", size = 115375, upload-time = "2026-11-17T15:15:44.788Z" },
+]
+
+[[package]]
 name = "certifi"
 version = "2026.10.23"
 source = { registry = "https://pypi.org/simple" }
@@ -196,6 +208,23 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/6d/cd/a361394c94b2129d604bb846f624a8e88255a3ee33129c434a00d715e64f/cffi-2.1.1-cp315-cp315t-win32.whl", hash = "sha256:06c72bb76605a4b0cd0aad6930b69d4baf7dd5d806cfc409b824191099700e66", size = 182707, upload-time = "2026-08-03T21:21:11.226Z" },
     { url = "https://files.pythonhosted.org/packages/9b/b5/ba2b299993c26577d529b6ae29841f9e15b9fcf004d65f423f4fcf94ade9/cffi-2.1.1-cp315-cp315t-win_amd64.whl", hash = "sha256:d9c275eaacd24aa73f94ffd6de08fc3f932424d8b6c376f4bed7cde376fe7bc3", size = 193772, upload-time = "2026-08-03T21:21:12.39Z" },
     { url = "https://files.pythonhosted.org/packages/aa/29/35e016098c814cd93de9cd320c66b5bfba14dc6ecedd3cb518fa7c408c69/cffi-2.1.1-cp315-cp315t-win_arm64.whl", hash = "sha256:d18e5ac0f2f03f4f518d3e23db0f0cad7faa1da8620e9c09461d443bbf6e6692", size = 186360, upload-time = "2026-08-03T21:21:13.636Z" },
+]
+
+[[package]]
+name = "cli-watch-kit"
+version = "0.1.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "click" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/2d/cb/0e38d10a406a9e108afef0a2bf33dd2636c54d058857aec37ae056999a7a/cli_watch_kit-0.1.0.tar.gz", hash = "sha256:cd77ee7a62c635eaffebf7fa109cde9d0acc9ceb64d78a40891d39df7eb4489b", size = 123056, upload-time = "2026-11-18T14:18:23.35Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/d9/a2/9ad32faef043505aea36d1031105877a8179d9da901dc809b978d1a50800/cli_watch_kit-0.1.0-py3-none-any.whl", hash = "sha256:a154d6a1555672a95c66bd917541db53320e8f420a503213a10cfbe1a07721f0", size = 73904, upload-time = "2026-11-18T14:18:22.034Z" },
+]
+
+[package.optional-dependencies]
+claude-code = [
+    { name = "cc-blackbox" },
 ]
 
 [[package]]
@@ -476,6 +505,8 @@ name = "linear-mcp-cli"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
+    { name = "cli-watch-kit", extra = ["claude-code"] },
+    { name = "httpx" },
     { name = "mcp-to-cli-kit" },
 ]
 
@@ -488,7 +519,11 @@ dev = [
 ]
 
 [package.metadata]
-requires-dist = [{ name = "mcp-to-cli-kit", specifier = ">=0.5.0,<0.6" }]
+requires-dist = [
+    { name = "cli-watch-kit", extras = ["claude-code"], specifier = ">=0.1.0,<0.2" },
+    { name = "httpx", specifier = ">=0.27" },
+    { name = "mcp-to-cli-kit", specifier = ">=0.5.0,<0.6" },
+]
 
 [package.metadata.requires-dev]
 dev = [

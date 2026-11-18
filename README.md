@@ -79,6 +79,26 @@ linear mcp get-user --query me
 
 The `save_*`, `delete_*`, `create_*`, `retire_*`, `restore_*`, `mark_*`, `share_*` and `unshare_*` tools change your Linear workspace.
 
+## Watching issues
+
+`linear watch` follows issues and reports each change as one JSON event per line on stdout, or, under Claude Code, as a message into the session that started it. It reads Linear's GraphQL API with the same API key and never changes anything.
+
+```bash
+linear watch issue ABC-123                         # one issue, by identifier or URL; ends when it is completed, canceled or archived
+linear watch issues --team ABC                     # a team's issues
+linear watch issues --team ABC --cycle active      # the active cycle, following the rollover (or --cycle 42)
+linear watch issues --view <slugId|view URL>       # a saved view
+linear watch daemon status|stop|logs
+```
+
+- Events: state, assignee, delegate, priority, title, labels, project and cycle changes; comments created, edited, resolved, unresolved and (issue watch only) deleted, each with the comment saved as a Markdown file; attachments added (merge requests, pull requests); issues entering and leaving a team, cycle or view; the active cycle rolling over. `--events` / `--exclude-events` take kinds or the groups `status`, `comments`, `links`, `scope`; `--until`, `--timeout` and `--idle-after` end a watch early.
+- All watches on the machine share one daemon, which polls every watched issue, team, cycle and view of one Linear user in one GraphQL request per tick (30 s for issues, 60 s for issues watches), paced on the rate limits Linear reports. `--no-daemon` polls inside the watcher instead.
+- The key is found as `linear mcp` finds it: the `Authorization` header in `~/.config/linear-mcp/config.yaml` (or `--config PATH`) wins over `LINEAR_API_KEY`. The daemon gets it over a private socket.
+- To watch several issues, start one watch per issue; the daemon polls them together.
+- Files: `<base>/<workspace>/issues/<ID>`, `.../teams/<KEY>[/cycles/<N|active>]`, `.../views/<slugId>`, each with `events.jsonl`, `state.json`, `baseline.json` and `comments/`. The base is the Claude Code session's scratchpad, else a temp dir, or `--base-dir`.
+
+Built on [cli-watch-kit](https://github.com/fprochazka/cli-watch-kit).
+
 ## Changes from the previous version
 
 - The command is now `linear mcp <tool>`. `linear-mcp <tool>` still works and is the same command; the config file, the cache and the `LINEAR_MCP_` variables keep their names.

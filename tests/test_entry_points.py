@@ -126,13 +126,13 @@ def test_linear_mcp_shows_its_version(capsys: pytest.CaptureFixture[str]) -> Non
     assert stdout.startswith(f"linear-mcp {version(DISTRIBUTION)} (mcp-to-cli-kit ")
 
 
-HEAVY_MODULES = ("mcp", "httpx", "pydantic", "jsonschema", "anyio", "mcp_to_cli_kit.cli")
+HEAVY_MODULES = ("mcp", "httpx", "pydantic", "jsonschema", "anyio", "yaml", "cc_blackbox", "mcp_to_cli_kit.cli")
 
 LAZY_SCRIPT = """
 import json, sys
 from linear_mcp.cli import main
 try:
-    main(["--help"])
+    main({args!r})
 except SystemExit as exited:
     code = exited.code
 loaded = [name for name in {heavy!r} if name in sys.modules]
@@ -140,7 +140,22 @@ print(json.dumps({{"code": code, "loaded": loaded}}), file=sys.stderr)
 """
 
 
-def test_linear_help_loads_nothing_of_the_mcp_side(tmp_path: Path) -> None:
+@pytest.mark.parametrize(
+    ("args", "listed"),
+    [
+        (
+            ["--help"],
+            ["mcp    Call the tools of Linear's MCP server.", "watch  Follow issues, views, teams and cycles"],
+        ),
+        (
+            ["watch", "--help"],
+            ["daemon  Inspect or stop", "issue   Watch one issue", "issues  Watch the issues"],
+        ),
+        (["watch", "issues", "--help"], ["--view TEXT", "--team TEXT", "--cycle TEXT", "--no-daemon"]),
+    ],
+    ids=["linear", "watch", "watch-issues"],
+)
+def test_help_loads_nothing_of_the_mcp_or_http_side(tmp_path: Path, args: list[str], listed: list[str]) -> None:
     cache = tmp_path / "cache"
     cache.mkdir()
     env = {
@@ -153,7 +168,7 @@ def test_linear_help_loads_nothing_of_the_mcp_side(tmp_path: Path) -> None:
     }
 
     completed = subprocess.run(
-        [sys.executable, "-c", LAZY_SCRIPT.format(heavy=HEAVY_MODULES)],
+        [sys.executable, "-c", LAZY_SCRIPT.format(args=args, heavy=HEAVY_MODULES)],
         env=env,
         capture_output=True,
         text=True,
@@ -162,5 +177,6 @@ def test_linear_help_loads_nothing_of_the_mcp_side(tmp_path: Path) -> None:
 
     result = json.loads(completed.stderr.strip().splitlines()[-1])
     assert result == {"code": 0, "loaded": []}
-    assert "mcp  Call the tools of Linear's MCP server." in completed.stdout
+    for line in listed:
+        assert line in completed.stdout
     assert list(cache.iterdir()) == []
