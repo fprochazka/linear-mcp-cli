@@ -8,13 +8,13 @@ List teams in the workspace.
 
 ```bash
 # All teams
-linear-mcp list-teams
+linear mcp list-teams
 
 # Search by name
-linear-mcp list-teams --query "Engineering"
+linear mcp list-teams --query "Engineering"
 
 # Recently updated
-linear-mcp list-teams --updated-at "-P30D"
+linear mcp list-teams --updated-at "-P30D"
 ```
 
 | Option | Description |
@@ -30,13 +30,13 @@ Get team details.
 
 ```bash
 # By name
-linear-mcp get-team --query "Engineering"
+linear mcp get-team --query "Engineering"
 
 # By key
-linear-mcp get-team --query "ENG"
+linear mcp get-team --query "ENG"
 
 # By UUID
-linear-mcp get-team --query "team-uuid"
+linear mcp get-team --query "team-uuid"
 ```
 
 **Note:** `--query` accepts team name, key, or UUID.
@@ -46,7 +46,7 @@ linear-mcp get-team --query "team-uuid"
 List workflow statuses for a team. Statuses are team-specific.
 
 ```bash
-linear-mcp list-issue-statuses --team "Engineering"
+linear mcp list-issue-statuses --team "Engineering"
 ```
 
 Returns statuses with their names, types and IDs. `list-issues --state` accepts any of them: a status name (e.g., `"In Progress"`, case-insensitive), a type (e.g., `"started"`, which matches every status of that type) or an ID.
@@ -58,7 +58,7 @@ Returns statuses with their names, types and IDs. `list-issues --state` accepts 
 Get details of a specific issue status. The tool requires `--id`, `--name` and `--team` together, so for a lookup by name use `list-issue-statuses --team` instead.
 
 ```bash
-linear-mcp get-issue-status --team "Engineering" --name "In Progress" --id "status-uuid"
+linear mcp get-issue-status --team "Engineering" --name "In Progress" --id "status-uuid"
 ```
 
 ## list-cycles
@@ -67,16 +67,16 @@ List cycles (sprints) for a team.
 
 ```bash
 # All cycles
-linear-mcp list-cycles --team-id "team-uuid"
+linear mcp list-cycles --team-id "team-uuid"
 
 # Current cycle only
-linear-mcp list-cycles --team-id "team-uuid" --type "current"
+linear mcp list-cycles --team-id "team-uuid" --type "current"
 
 # Previous cycle
-linear-mcp list-cycles --team-id "team-uuid" --type "previous"
+linear mcp list-cycles --team-id "team-uuid" --type "previous"
 
 # Next cycle
-linear-mcp list-cycles --team-id "team-uuid" --type "next"
+linear mcp list-cycles --team-id "team-uuid" --type "next"
 ```
 
 **Note:** `--team-id` requires the internal UUID from `list-teams`.

@@ -2,12 +2,12 @@
 name: linear-mcp-cli
 description: CLI for querying and updating Linear (issues, projects, teams, documents, comments). Use when managing issues, creating/updating tasks, exploring projects, or integrating Linear with workflows. Triggered by requests involving Linear data, issue tracking, or project management.
 trigger-keywords: linear, issue, issues, tasks, task, ticket, tickets
-allowed-tools: Bash(linear-mcp --help), Bash(linear-mcp --refresh-tools --help), Bash(linear-mcp config:*), Bash(linear-mcp schema:*), Bash(linear-mcp get-agent-skill:*), Bash(linear-mcp get-attachment:*), Bash(linear-mcp get-document:*), Bash(linear-mcp get-initiative:*), Bash(linear-mcp get-issue:*), Bash(linear-mcp get-issue-status:*), Bash(linear-mcp get-milestone:*), Bash(linear-mcp get-notifications:*), Bash(linear-mcp get-project:*), Bash(linear-mcp get-release:*), Bash(linear-mcp get-release-note:*), Bash(linear-mcp get-status-updates:*), Bash(linear-mcp get-team:*), Bash(linear-mcp get-template:*), Bash(linear-mcp get-triage-responsibility:*), Bash(linear-mcp get-user:*), Bash(linear-mcp get-workspace:*), Bash(linear-mcp list-agent-skills:*), Bash(linear-mcp list-comments:*), Bash(linear-mcp list-custom-views:*), Bash(linear-mcp list-customer-needs:*), Bash(linear-mcp list-customers:*), Bash(linear-mcp list-cycles:*), Bash(linear-mcp list-documents:*), Bash(linear-mcp list-initiative-labels:*), Bash(linear-mcp list-initiatives:*), Bash(linear-mcp list-issue-labels:*), Bash(linear-mcp list-issue-statuses:*), Bash(linear-mcp list-issues:*), Bash(linear-mcp list-milestones:*), Bash(linear-mcp list-project-labels:*), Bash(linear-mcp list-projects:*), Bash(linear-mcp list-release-notes:*), Bash(linear-mcp list-release-pipelines:*), Bash(linear-mcp list-releases:*), Bash(linear-mcp list-teams:*), Bash(linear-mcp list-templates:*), Bash(linear-mcp list-users:*), Bash(linear-mcp search-documentation:*), Bash(linear-mcp save-issue --help), Bash(linear-mcp save-comment --help), Bash(linear-mcp save-document --help), Bash(linear-mcp save-project --help), Bash(linear-mcp save-issue-label --help)
+allowed-tools: Bash(linear --help), Bash(linear mcp --help), Bash(linear mcp --refresh-tools --help), Bash(linear mcp config:*), Bash(linear mcp schema:*), Bash(linear mcp get-agent-skill:*), Bash(linear mcp get-attachment:*), Bash(linear mcp get-document:*), Bash(linear mcp get-initiative:*), Bash(linear mcp get-issue:*), Bash(linear mcp get-issue-status:*), Bash(linear mcp get-milestone:*), Bash(linear mcp get-notifications:*), Bash(linear mcp get-project:*), Bash(linear mcp get-release:*), Bash(linear mcp get-release-note:*), Bash(linear mcp get-status-updates:*), Bash(linear mcp get-team:*), Bash(linear mcp get-template:*), Bash(linear mcp get-triage-responsibility:*), Bash(linear mcp get-user:*), Bash(linear mcp get-workspace:*), Bash(linear mcp list-agent-skills:*), Bash(linear mcp list-comments:*), Bash(linear mcp list-custom-views:*), Bash(linear mcp list-customer-needs:*), Bash(linear mcp list-customers:*), Bash(linear mcp list-cycles:*), Bash(linear mcp list-documents:*), Bash(linear mcp list-initiative-labels:*), Bash(linear mcp list-initiatives:*), Bash(linear mcp list-issue-labels:*), Bash(linear mcp list-issue-statuses:*), Bash(linear mcp list-issues:*), Bash(linear mcp list-milestones:*), Bash(linear mcp list-project-labels:*), Bash(linear mcp list-projects:*), Bash(linear mcp list-release-notes:*), Bash(linear mcp list-release-pipelines:*), Bash(linear mcp list-releases:*), Bash(linear mcp list-teams:*), Bash(linear mcp list-templates:*), Bash(linear mcp list-users:*), Bash(linear mcp search-documentation:*), Bash(linear mcp save-issue --help), Bash(linear mcp save-comment --help), Bash(linear mcp save-document --help), Bash(linear mcp save-project --help), Bash(linear mcp save-issue-label --help), Bash(linear-mcp --help), Bash(linear-mcp --refresh-tools --help), Bash(linear-mcp config:*), Bash(linear-mcp schema:*), Bash(linear-mcp get-agent-skill:*), Bash(linear-mcp get-attachment:*), Bash(linear-mcp get-document:*), Bash(linear-mcp get-initiative:*), Bash(linear-mcp get-issue:*), Bash(linear-mcp get-issue-status:*), Bash(linear-mcp get-milestone:*), Bash(linear-mcp get-notifications:*), Bash(linear-mcp get-project:*), Bash(linear-mcp get-release:*), Bash(linear-mcp get-release-note:*), Bash(linear-mcp get-status-updates:*), Bash(linear-mcp get-team:*), Bash(linear-mcp get-template:*), Bash(linear-mcp get-triage-responsibility:*), Bash(linear-mcp get-user:*), Bash(linear-mcp get-workspace:*), Bash(linear-mcp list-agent-skills:*), Bash(linear-mcp list-comments:*), Bash(linear-mcp list-custom-views:*), Bash(linear-mcp list-customer-needs:*), Bash(linear-mcp list-customers:*), Bash(linear-mcp list-cycles:*), Bash(linear-mcp list-documents:*), Bash(linear-mcp list-initiative-labels:*), Bash(linear-mcp list-initiatives:*), Bash(linear-mcp list-issue-labels:*), Bash(linear-mcp list-issue-statuses:*), Bash(linear-mcp list-issues:*), Bash(linear-mcp list-milestones:*), Bash(linear-mcp list-project-labels:*), Bash(linear-mcp list-projects:*), Bash(linear-mcp list-release-notes:*), Bash(linear-mcp list-release-pipelines:*), Bash(linear-mcp list-releases:*), Bash(linear-mcp list-teams:*), Bash(linear-mcp list-templates:*), Bash(linear-mcp list-users:*), Bash(linear-mcp search-documentation:*), Bash(linear-mcp save-issue --help), Bash(linear-mcp save-comment --help), Bash(linear-mcp save-document --help), Bash(linear-mcp save-project --help), Bash(linear-mcp save-issue-label --help)
 ---
 
 # Linear MCP CLI
 
-CLI tool providing direct access to Linear data through Linear's official MCP server. Each tool is a command; `linear-mcp --help` lists them all, including the ones not covered here (initiatives, milestones, cycles, releases, customers, attachments, notifications, ...).
+CLI tool providing direct access to Linear data through Linear's official MCP server. Each tool is a command; `linear mcp --help` lists them all, including the ones not covered here (initiatives, milestones, cycles, releases, customers, attachments, notifications, ...).
 
 ## ⚠️ Mutating commands are NOT idempotent — never re-run a create to inspect its output
 
@@ -90,7 +90,7 @@ Objects take a JSON literal; invalid JSON is a usage error. Values are never spl
 Where a tool's help says "Null to remove" (`--duplicate-of`, `--parent-id`, `--assignee`, `--lead`, ...), send the null through `--input-json`, which merges with the other options:
 
 ```bash
-linear-mcp save-issue --id "ABC-123" --input-json '{"duplicateOf": null}'
+linear mcp save-issue --id "ABC-123" --input-json '{"duplicateOf": null}'
 ```
 
 ## Priority Values
@@ -125,12 +125,14 @@ linear-mcp save-issue --id "ABC-123" --input-json '{"duplicateOf": null}'
 - An option left out is not sent; the server applies its default.
 - Booleans are `--x` / `--no-x` (`--include-archived` / `--no-include-archived`). There is no `--x true` form.
 - `--input-json '{...}'` (or `@file`, or `-` for stdin) passes all arguments as one JSON object, merged with the options given.
-- `linear-mcp schema <command>` prints a tool's raw input schema; `linear-mcp <command> --help` its full description and options.
+- `linear mcp schema <command>` prints a tool's raw input schema; `linear mcp <command> --help` its full description and options.
 - Under an AI agent, or with `--json`, the result is printed exactly as the server sent it; `--pretty` indents JSON. Pipe either into `jq` — but never a create (see above).
 - Exit codes: 0 success; 1 the tool reported an error (message on stderr); 2 a usage or config error (the tool's parameter list is printed); 3 Linear could not be reached; 130 interrupted.
 - A call times out after 100 s; raise it with `LINEAR_MCP_SERVERS__LINEAR__SSE_READ_TIMEOUT=300`.
-- The API key comes from `LINEAR_API_KEY`, or from the `Authorization` header in `~/.config/linear-mcp/config.yaml`. A missing key exits 2 and names the variable. `linear-mcp config` shows the effective configuration with the key masked.
-- The tool list is cached for an hour; `linear-mcp --refresh-tools --help` fetches it again.
+- The API key comes from `LINEAR_API_KEY`, or from the `Authorization` header in `~/.config/linear-mcp/config.yaml`. A missing key exits 2 and names the variable. `linear mcp config` shows the effective configuration with the key masked.
+- The tool list is cached for an hour; `linear mcp --refresh-tools --help` fetches it again.
+- The options `--config`, `-v`, `--refresh-tools`, `--json` and `--pretty` go after `mcp`: `linear mcp --json get-issue --id ABC-123`.
+- `linear-mcp <command>` is the same command as `linear mcp <command>`, under its older name.
 
 ---
 
@@ -142,19 +144,19 @@ List issues in the workspace with filters.
 
 ```bash
 # My issues
-linear-mcp list-issues --assignee "me"
+linear mcp list-issues --assignee "me"
 
 # Filter by state and team
-linear-mcp list-issues --state "In Progress" --team "Engineering"
+linear mcp list-issues --state "In Progress" --team "Engineering"
 
 # By project
-linear-mcp list-issues --project "Q1 Roadmap"
+linear mcp list-issues --project "Q1 Roadmap"
 
 # Recently updated
-linear-mcp list-issues --updated-at "-P1D"
+linear mcp list-issues --updated-at "-P1D"
 
 # Combine filters
-linear-mcp list-issues --team "Engineering" --state "In Progress" --assignee "me" --limit 25
+linear mcp list-issues --team "Engineering" --state "In Progress" --assignee "me" --limit 25
 ```
 
 | Option | Description |
@@ -177,10 +179,10 @@ linear-mcp list-issues --team "Engineering" --state "In Progress" --assignee "me
 Get detailed issue info including attachments and git branch name.
 
 ```bash
-linear-mcp get-issue --id "ABC-123"
+linear mcp get-issue --id "ABC-123"
 
 # Include relations (blocking, related, duplicate)
-linear-mcp get-issue --id "ABC-123" --include-relations
+linear mcp get-issue --id "ABC-123" --include-relations
 ```
 
 **Note:** `--id` accepts either the internal UUID or the issue identifier (e.g., `ABC-123`).
@@ -193,10 +195,10 @@ Create or update an issue. If `--id` is provided, updates the existing issue; ot
 
 ```bash
 # Create basic (no description)
-linear-mcp save-issue --team "Engineering" --title "Fix login bug"
+linear mcp save-issue --team "Engineering" --title "Fix login bug"
 
 # Create with description (write to file first, see "Content Preparation Workflow" above)
-linear-mcp save-issue --team "Engineering" --title "Fix login bug" \
+linear mcp save-issue --team "Engineering" --title "Fix login bug" \
   --arg-file description=<scratchpad>/issue-desc-UNIQUE.md \
   --assignee "me" \
   --priority 2 \
@@ -204,32 +206,32 @@ linear-mcp save-issue --team "Engineering" --title "Fix login bug" \
   --labels '["bug", "auth"]'
 
 # Create with project and due date
-linear-mcp save-issue --team "Engineering" --title "Implement feature" \
+linear mcp save-issue --team "Engineering" --title "Implement feature" \
   --project "Q1 Roadmap" \
   --due-date "2024-03-15"
 
 # Create sub-issue
-linear-mcp save-issue --team "Engineering" --title "Subtask" \
+linear mcp save-issue --team "Engineering" --title "Subtask" \
   --parent-id "parent-issue-uuid"
 
 # Create with links
-linear-mcp save-issue --team "Engineering" --title "Fix bug" \
+linear mcp save-issue --team "Engineering" --title "Fix bug" \
   --links '[{"url": "https://github.com/org/repo/pull/123", "title": "Fix PR"}]'
 
 # Update state
-linear-mcp save-issue --id "ABC-123" --state "Done"
+linear mcp save-issue --id "ABC-123" --state "Done"
 
 # Reassign
-linear-mcp save-issue --id "ABC-123" --assignee "jane@example.com"
+linear mcp save-issue --id "ABC-123" --assignee "jane@example.com"
 
 # Update multiple fields
-linear-mcp save-issue --id "ABC-123" \
+linear mcp save-issue --id "ABC-123" \
   --state "In Progress" \
   --priority 1 \
   --labels '["urgent", "bug"]'
 
 # Update description (write to file first, see "Content Preparation Workflow" above)
-linear-mcp save-issue --id "ABC-123" \
+linear mcp save-issue --id "ABC-123" \
   --arg-file description=<scratchpad>/issue-desc-UNIQUE.md
 ```
 
@@ -258,34 +260,34 @@ Create relationships between issues using identifiers (e.g., `ABC-123`) or UUIDs
 
 ```bash
 # Block other issues
-linear-mcp save-issue --team "Eng" --title "Blocker" \
+linear mcp save-issue --team "Eng" --title "Blocker" \
   --blocks '["ABC-123", "ABC-124"]'
 
 # Blocked by other issues
-linear-mcp save-issue --team "Eng" --title "Waiting" \
+linear mcp save-issue --team "Eng" --title "Waiting" \
   --blocked-by '["ABC-100"]'
 
 # Related issues
-linear-mcp save-issue --team "Eng" --title "Related work" \
+linear mcp save-issue --team "Eng" --title "Related work" \
   --related-to '["ABC-50", "ABC-51"]'
 
 # Mark as duplicate
-linear-mcp save-issue --id "ABC-456" --duplicate-of "ABC-123"
+linear mcp save-issue --id "ABC-456" --duplicate-of "ABC-123"
 ```
 
 **Append-only semantics:** `--blocks`, `--blocked-by`, `--related-to` (and `--links`) only ADD relations — they never remove existing ones. To remove relations, use the corresponding `--remove-blocks`, `--remove-blocked-by`, `--remove-related-to` parameters.
 
 ```bash
 # Add a new blocker (existing blockers are preserved)
-linear-mcp save-issue --id "ABC-123" --blocks '["DEF-456"]'
+linear mcp save-issue --id "ABC-123" --blocks '["DEF-456"]'
 
 # Stop blocking a specific issue
-linear-mcp save-issue --id "ABC-123" --remove-blocks '["DEF-456"]'
+linear mcp save-issue --id "ABC-123" --remove-blocks '["DEF-456"]'
 
 # Swap a blocker in one call
-linear-mcp save-issue --id "ABC-123" \
+linear mcp save-issue --id "ABC-123" \
   --remove-blocks '["DEF-123"]' \
   --blocks '["DEF-456"]'
 ```
 
-**Note:** `--duplicate-of` is single-valued. To remove the duplicate relation, send a null: `linear-mcp save-issue --id "ABC-123" --input-json '{"duplicateOf": null}'`.
+**Note:** `--duplicate-of` is single-valued. To remove the duplicate relation, send a null: `linear mcp save-issue --id "ABC-123" --input-json '{"duplicateOf": null}'`.

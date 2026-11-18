@@ -6,10 +6,10 @@ List comments for an issue.
 
 ```bash
 # By issue identifier
-linear-mcp list-comments --issue-id "ABC-123"
+linear mcp list-comments --issue-id "ABC-123"
 
 # Or by issue UUID
-linear-mcp list-comments --issue-id "issue-uuid"
+linear mcp list-comments --issue-id "issue-uuid"
 ```
 
 **Note:** `--issue-id` accepts the issue identifier (e.g., `ABC-123`) or the internal UUID.
@@ -20,16 +20,16 @@ Create or update a comment on an issue. If `--id` is provided, updates the exist
 
 ```bash
 # Create a new top-level comment (write to file first, see "Content Preparation Workflow" in SKILL.md)
-linear-mcp save-comment --issue-id "ABC-123" \
+linear mcp save-comment --issue-id "ABC-123" \
   --arg-file body=<scratchpad>/comment-ABC-123.md
 
 # Reply to an existing comment (thread)
-linear-mcp save-comment --issue-id "ABC-123" \
+linear mcp save-comment --issue-id "ABC-123" \
   --parent-id "comment-uuid" \
   --arg-file body=<scratchpad>/comment-reply-ABC-123.md
 
 # Update an existing comment
-linear-mcp save-comment --id "comment-uuid" \
+linear mcp save-comment --id "comment-uuid" \
   --arg-file body=<scratchpad>/comment-edit-ABC-123.md
 ```
 
@@ -40,4 +40,4 @@ linear-mcp save-comment --id "comment-uuid" \
 | `--parent-id` | Parent comment UUID (for replies, only when creating) |
 | `--body` | Comment content as Markdown (required) |
 
-**Note:** `save-comment` can also target projects, initiatives, documents, and project milestones (via `--project-id`, `--initiative-id`, `--document-id`, `--milestone-id`) — see `linear-mcp save-comment --help`.
+**Note:** `save-comment` can also target projects, initiatives, documents, and project milestones (via `--project-id`, `--initiative-id`, `--document-id`, `--milestone-id`) — see `linear mcp save-comment --help`.

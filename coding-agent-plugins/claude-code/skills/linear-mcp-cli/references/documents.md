@@ -6,16 +6,16 @@ List documents in the workspace.
 
 ```bash
 # All documents
-linear-mcp list-documents
+linear mcp list-documents
 
 # Search by content
-linear-mcp list-documents --query "roadmap"
+linear mcp list-documents --query "roadmap"
 
 # By project
-linear-mcp list-documents --project-id "project-uuid"
+linear mcp list-documents --project-id "project-uuid"
 
 # Recently updated
-linear-mcp list-documents --updated-at "-P7D"
+linear mcp list-documents --updated-at "-P7D"
 ```
 
 | Option | Description |
@@ -36,10 +36,10 @@ Get document content by ID or slug.
 
 ```bash
 # By ID
-linear-mcp get-document --id "document-uuid"
+linear mcp get-document --id "document-uuid"
 
 # By slug
-linear-mcp get-document --id "my-document-slug"
+linear mcp get-document --id "my-document-slug"
 ```
 
 ## save-document
@@ -48,33 +48,33 @@ Create or update a document. If `--id` is provided, updates the existing documen
 
 ```bash
 # Create basic (no content)
-linear-mcp save-document --title "Meeting Notes" --project "Engineering"
+linear mcp save-document --title "Meeting Notes" --project "Engineering"
 
 # Create with content (write to file first, see "Content Preparation Workflow" in SKILL.md)
-linear-mcp save-document --title "Architecture Decision" \
+linear mcp save-document --title "Architecture Decision" \
   --project "Backend Refactor" \
   --arg-file content=<scratchpad>/doc-arch-decision-UNIQUE.md
 
 # Attached to an issue
-linear-mcp save-document --title "Investigation Notes" \
+linear mcp save-document --title "Investigation Notes" \
   --issue "ABC-123" \
   --arg-file content=<scratchpad>/doc-investigation-UNIQUE.md
 
 # With icon and color
-linear-mcp save-document --title "Team Handbook" \
+linear mcp save-document --title "Team Handbook" \
   --project "Engineering" \
   --icon ":book:" \
   --color "#10B981"
 
 # Update content (write to file first)
-linear-mcp save-document --id "document-uuid" \
+linear mcp save-document --id "document-uuid" \
   --arg-file content=<scratchpad>/doc-update-UNIQUE.md
 
 # Update title
-linear-mcp save-document --id "document-uuid" --title "New Title"
+linear mcp save-document --id "document-uuid" --title "New Title"
 
 # Reparent to a different project
-linear-mcp save-document --id "document-uuid" --project "New Project"
+linear mcp save-document --id "document-uuid" --project "New Project"
 ```
 
 | Option | Description |

@@ -6,13 +6,13 @@ Search Linear's official documentation.
 
 ```bash
 # Search for workflow info
-linear-mcp search-documentation --query "workflow states"
+linear mcp search-documentation --query "workflow states"
 
 # Search for integration docs
-linear-mcp search-documentation --query "github integration"
+linear mcp search-documentation --query "github integration"
 
 # Search for API info
-linear-mcp search-documentation --query "webhooks"
+linear mcp search-documentation --query "webhooks"
 ```
 
 | Option | Description |

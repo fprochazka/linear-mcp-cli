@@ -8,13 +8,13 @@ List available issue labels.
 
 ```bash
 # All labels (workspace + all teams)
-linear-mcp list-issue-labels
+linear mcp list-issue-labels
 
 # Labels for a specific team
-linear-mcp list-issue-labels --team "Engineering"
+linear mcp list-issue-labels --team "Engineering"
 
 # Filter by name
-linear-mcp list-issue-labels --name "bug"
+linear mcp list-issue-labels --name "bug"
 ```
 
 | Option | Description |
@@ -29,21 +29,21 @@ Create or update an issue label. If `--id` is provided (label name or ID), updat
 
 ```bash
 # Workspace-level label (available to all teams)
-linear-mcp save-issue-label --name "critical" --color "#FF0000"
+linear mcp save-issue-label --name "critical" --color "#FF0000"
 
 # Team-specific label
-linear-mcp save-issue-label --name "frontend" --team-id "team-uuid" --color "#3B82F6"
+linear mcp save-issue-label --name "frontend" --team-id "team-uuid" --color "#3B82F6"
 
 # With description
-linear-mcp save-issue-label --name "needs-review" \
+linear mcp save-issue-label --name "needs-review" \
   --description "Issues requiring code review" \
   --color "#F59E0B"
 
 # Create a label group (cannot be applied directly to issues)
-linear-mcp save-issue-label --name "Priority" --is-group
+linear mcp save-issue-label --name "Priority" --is-group
 
 # Child label in a group
-linear-mcp save-issue-label --name "P0" --parent "Priority" --color "#EF4444"
+linear mcp save-issue-label --name "P0" --parent "Priority" --color "#EF4444"
 ```
 
 | Option | Description |

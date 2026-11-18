@@ -106,7 +106,7 @@ claude plugin install linear-mcp-cli@fprochazka-linear-mcp-cli
 
 If you copied the skill by hand before (`~/.claude/skills/linear-mcp-cli`), remove that copy once the plugin is installed; otherwise Claude loads two skills with the same name.
 
-The skill allows the read-only commands without a prompt: every `get-*`, `list-*` and `search-*` command, `schema`, `config` (which masks the key) and `--help`. Of the commands that change your workspace, only the `--help` of `save-issue`, `save-comment`, `save-document`, `save-project` and `save-issue-label` is allowed; running them asks for permission. The granted read commands also accept `--arg-file` and `--input-json @file`, so an agent can send the content of a local file to Linear (as a search query or filter) without a prompt.
+The skill allows the read-only commands without a prompt, spelled `linear mcp <command>` or `linear-mcp <command>`: every `get-*`, `list-*` and `search-*` command, `schema`, `config` (which masks the key) and `--help`. Of the commands that change your workspace, only the `--help` of `save-issue`, `save-comment`, `save-document`, `save-project` and `save-issue-label` is allowed; running them asks for permission. The granted read commands also accept `--arg-file` and `--input-json @file`, so an agent can send the content of a local file to Linear (as a search query or filter) without a prompt.
 
 ## Development
 
