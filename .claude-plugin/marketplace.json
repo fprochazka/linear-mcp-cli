@@ -1,14 +1,14 @@
 {
   "name": "fprochazka-linear-mcp-cli",
-  "description": "The linear CLI for Linear's official MCP server (linear mcp <tool>), with a skill for Claude Code",
+  "description": "The linear CLI for Linear's official MCP server (linear mcp <tool>) and linear watch, with skills for Claude Code",
   "owner": {
     "name": "Filip Procházka"
   },
   "plugins": [
     {
       "name": "linear-mcp-cli",
-      "description": "Skill for querying and updating Linear with the linear CLI (linear mcp <tool>)",
-      "version": "0.2.1",
+      "description": "Skills for querying and updating Linear with the linear CLI (linear mcp <tool>) and for following issues as they change with linear watch",
+      "version": "0.3.0",
       "author": {
         "name": "Filip Procházka"
       },

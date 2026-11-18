@@ -101,6 +101,7 @@ Built on [cli-watch-kit](https://github.com/fprochazka/cli-watch-kit).
 
 ## Changes from the previous version
 
+- `linear watch` is new: it follows issues, teams, cycles and views and reports their changes as events, with a `linear-watch` skill for Claude Code.
 - The command is now `linear mcp <tool>`. `linear-mcp <tool>` still works and is the same command; the config file, the cache and the `LINEAR_MCP_` variables keep their names.
 - The config shape changed. The old `linear.api_key` and `mcp_server:` keys are gone; a config file that still uses them fails with "linear: Extra inputs are not permitted" (exit 2). Put the key into `servers.linear.headers.Authorization` as `Bearer <key>`, as shown above. The old environment overrides `LINEAR_MCP_LINEAR__API_KEY`, `LINEAR_MCP_MCP_SERVER__TIMEOUT` and `LINEAR_MCP_MCP_SERVER__SSE_READ_TIMEOUT` are ignored too; use `LINEAR_API_KEY` and `LINEAR_MCP_SERVERS__LINEAR__TIMEOUT` / `LINEAR_MCP_SERVERS__LINEAR__SSE_READ_TIMEOUT` (or any other `LINEAR_MCP_SERVERS__LINEAR__*` key). With `-v` the CLI lists the variables it ignored.
 - An `Authorization` header in the config file now wins over `LINEAR_API_KEY`; before, the variable won.
@@ -117,7 +118,7 @@ Built on [cli-watch-kit](https://github.com/fprochazka/cli-watch-kit).
 
 ## Claude Code skill
 
-The repo is also a Claude Code plugin marketplace (`fprochazka-linear-mcp-cli`) with one plugin, `linear-mcp-cli`. Its skill teaches an agent the commands for issues, projects, teams, users, labels, documents and comments, how names resolve to IDs, how to pass long Markdown bodies from files, and how to avoid creating duplicates.
+The repo is also a Claude Code plugin marketplace (`fprochazka-linear-mcp-cli`) with one plugin, `linear-mcp-cli`, which has two skills. The `linear-mcp-cli` skill teaches an agent the commands for issues, projects, teams, users, labels, documents and comments, how names resolve to IDs, how to pass long Markdown bodies from files, and how to avoid creating duplicates.
 
 ```bash
 claude plugin marketplace add https://github.com/fprochazka/linear-mcp-cli.git
@@ -127,6 +128,8 @@ claude plugin install linear-mcp-cli@fprochazka-linear-mcp-cli
 If you copied the skill by hand before (`~/.claude/skills/linear-mcp-cli`), remove that copy once the plugin is installed; otherwise Claude loads two skills with the same name.
 
 The skill allows the read-only commands without a prompt, spelled `linear mcp <command>` or `linear-mcp <command>`: every `get-*`, `list-*` and `search-*` command, `schema`, `config` (which masks the key) and `--help`. Of the commands that change your workspace, only the `--help` of `save-issue`, `save-comment`, `save-document`, `save-project` and `save-issue-label` is allowed; running them asks for permission. The granted read commands also accept `--arg-file` and `--input-json @file`, so an agent can send the content of a local file to Linear (as a search query or filter) without a prompt.
+
+The `linear-watch` skill teaches an agent to start `linear watch` in the background, read its header, filter its events and react to the messages it sends into the session. It allows the read-only watch commands without a prompt: `linear watch issue`, `linear watch issues`, `linear watch daemon status`, `linear watch daemon logs` and `--help`. `linear watch daemon stop` is not allowed, because it interrupts every watch on the machine; running it asks for permission.
 
 ## Development
 
