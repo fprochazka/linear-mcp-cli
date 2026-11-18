@@ -1,6 +1,6 @@
 # Linear MCP CLI
 
-A command-line interface for [Linear](https://linear.app) through its official [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) server at `https://mcp.linear.app/mcp`. Each tool of the server (issues, projects, teams, documents, comments, labels, cycles, ...) is a command.
+A command-line interface for [Linear](https://linear.app) through its official [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) server at `https://mcp.linear.app/mcp`. The command is `linear`, and each tool of the server (issues, projects, teams, documents, comments, labels, cycles, ...) is a command under `linear mcp`.
 
 Built on [mcp-to-cli-kit](https://pypi.org/project/mcp-to-cli-kit/), which turns every MCP tool into a subcommand with typed options compiled from the tool's input schema.
 
@@ -15,6 +15,8 @@ cd linear-mcp-cli
 # Install globally (editable - updates after git pull)
 uv tool install -e .
 ```
+
+This installs two commands: `linear`, and `linear-mcp`, which is the same as `linear mcp` and stays for scripts that already use it. [schpet/linear-cli](https://github.com/schpet/linear-cli) also installs a `linear` command; with both installed, the one earlier on your `PATH` wins, and `uv tool install` refuses to replace a `~/.local/bin/linear` it did not create unless given `--force`.
 
 ## Configuration
 
@@ -48,24 +50,25 @@ servers:
 export LINEAR_MCP_SERVERS__LINEAR__SSE_READ_TIMEOUT=200
 ```
 
-`linear-mcp config` prints the effective configuration without contacting Linear, with the key masked.
+`linear mcp config` prints the effective configuration without contacting Linear, with the key masked.
 
 ## Usage
 
 ```bash
-linear-mcp --help                                  # the tools
-linear-mcp get-issue --help                        # one tool's full description and options
-linear-mcp schema get-issue                        # the tool's raw input schema
+linear mcp --help                              # the tools
+linear mcp get-issue --help                    # one tool's full description and options
+linear mcp schema get-issue                    # the tool's raw input schema
 
-linear-mcp list-teams
-linear-mcp list-issue-statuses --team "<team name or id>"
-linear-mcp list-issues --assignee me --limit 10
-linear-mcp list-issues --team "<team>" --state "In Progress" --order-by updatedAt
-linear-mcp get-issue --id ABC-123 --include-relations
-linear-mcp list-projects --limit 5
-linear-mcp get-user --query me
+linear mcp list-teams
+linear mcp list-issue-statuses --team "<team name or id>"
+linear mcp list-issues --assignee me --limit 10
+linear mcp list-issues --team "<team>" --state "In Progress" --order-by updatedAt
+linear mcp get-issue --id ABC-123 --include-relations
+linear mcp list-projects --limit 5
+linear mcp get-user --query me
 ```
 
+- The options of the MCP commands (`--config`, `-v`, `--refresh-tools`, `--json`, `--pretty`) go after `mcp`: `linear mcp --config other.yaml get-issue --id ABC-123`.
 - Commands are kebab case (`get-issue`). The tool's own name (`get_issue`) still works.
 - Options are kebab case (`--include-relations`). The schema's own spelling (`--includeRelations`) and the snake case are accepted too.
 - An option you leave out is not sent; the server applies its default. Booleans are `--x` / `--no-x`. Arrays are repeated options or one JSON literal; objects take a JSON literal.
@@ -78,6 +81,7 @@ The `save_*`, `delete_*`, `create_*`, `retire_*`, `restore_*`, `mark_*`, `share_
 
 ## Changes from the previous version
 
+- The command is now `linear mcp <tool>`. `linear-mcp <tool>` still works and is the same command; the config file, the cache and the `LINEAR_MCP_` variables keep their names.
 - The config shape changed. The old `linear.api_key` and `mcp_server:` keys are gone; a config file that still uses them fails with "linear: Extra inputs are not permitted" (exit 2). Put the key into `servers.linear.headers.Authorization` as `Bearer <key>`, as shown above. The old environment overrides `LINEAR_MCP_LINEAR__API_KEY`, `LINEAR_MCP_MCP_SERVER__TIMEOUT` and `LINEAR_MCP_MCP_SERVER__SSE_READ_TIMEOUT` are ignored too; use `LINEAR_API_KEY` and `LINEAR_MCP_SERVERS__LINEAR__TIMEOUT` / `LINEAR_MCP_SERVERS__LINEAR__SSE_READ_TIMEOUT` (or any other `LINEAR_MCP_SERVERS__LINEAR__*` key). With `-v` the CLI lists the variables it ignored.
 - An `Authorization` header in the config file now wins over `LINEAR_API_KEY`; before, the variable won.
 - `linear-mcp init` is gone. Create the file by hand or export `LINEAR_API_KEY`.

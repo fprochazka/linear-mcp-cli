@@ -7,11 +7,12 @@ authors = [
 ]
 requires-python = ">=3.12"
 dependencies = [
-    "mcp-to-cli-kit>=0.4.0,<0.5",
+    "mcp-to-cli-kit>=0.5.0,<0.6",
 ]
 
 [project.scripts]
-linear-mcp = "linear_mcp.cli:main"
+linear = "linear_mcp.cli:main"
+linear-mcp = "linear_mcp.cli:mcp_main"
 
 [build-system]
 requires = ["hatchling"]

@@ -488,7 +488,7 @@ dev = [
 ]
 
 [package.metadata]
-requires-dist = [{ name = "mcp-to-cli-kit", specifier = ">=0.4.0,<0.5" }]
+requires-dist = [{ name = "mcp-to-cli-kit", specifier = ">=0.5.0,<0.6" }]
 
 [package.metadata.requires-dev]
 dev = [
@@ -525,7 +525,7 @@ wheels = [
 
 [[package]]
 name = "mcp-to-cli-kit"
-version = "0.4.0"
+version = "0.5.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "click" },
@@ -535,9 +535,9 @@ dependencies = [
     { name = "pydantic" },
     { name = "pyyaml" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/49/54/335169ffa52cb0eeff1bbee6231f3bd857ce1f46cbf90a4da902bbead74a/mcp_to_cli_kit-0.4.0.tar.gz", hash = "sha256:0c9f3d6ff12c47b43617558ea4b641793e491edea58c2fa84a7eb5511f3258ff", size = 182381, upload-time = "2026-11-17T14:55:45.689Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/af/f6/b5c14e0c92bd0d733e1e1d901c1ba25731ba4900a6f2d4852b1922600fd1/mcp_to_cli_kit-0.5.0.tar.gz", hash = "sha256:6179db2dab87e3c0e1d425c08c81d9a42b385314d2642a67cf54526359c9a592", size = 189828, upload-time = "2026-11-18T12:19:44.326Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/b8/79/bfda560a926e32d2fa36b827e18df990ac125e7eb694692d43805e6d52ed/mcp_to_cli_kit-0.4.0-py3-none-any.whl", hash = "sha256:335a2ffc33a0f9a6f9cd53cc64ab66ea586f04bcb60bf6b04830b45cda2fc8a2", size = 74497, upload-time = "2026-11-17T14:55:44.257Z" },
+    { url = "https://files.pythonhosted.org/packages/6f/1a/a90003bd6f2b0183bdd556f3473db6c51e5ab6e2c49df93938a7d4eb3def/mcp_to_cli_kit-0.5.0-py3-none-any.whl", hash = "sha256:13dc525318297f9436446381d2ff6c5b8a08bf8d8433ae6a991e6c6468e9544c", size = 79260, upload-time = "2026-11-18T12:19:42.973Z" },
 ]
 
 [[package]]
