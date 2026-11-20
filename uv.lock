@@ -212,14 +212,14 @@ wheels = [
 
 [[package]]
 name = "cli-watch-kit"
-version = "0.1.0"
+version = "0.2.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "click" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/2d/cb/0e38d10a406a9e108afef0a2bf33dd2636c54d058857aec37ae056999a7a/cli_watch_kit-0.1.0.tar.gz", hash = "sha256:cd77ee7a62c635eaffebf7fa109cde9d0acc9ceb64d78a40891d39df7eb4489b", size = 123056, upload-time = "2026-11-18T14:18:23.35Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/d3/e3/bb4713f9e4544e405d92e20dcf6c647f290b07b4dea1cbdbea81fd24dd0c/cli_watch_kit-0.2.1.tar.gz", hash = "sha256:87f3f1f8c88d5a99bcf9cbe6f2cc7baba24e5355ae5753c274cde7d69bd47917", size = 135854, upload-time = "2026-11-20T15:39:01.734Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/d9/a2/9ad32faef043505aea36d1031105877a8179d9da901dc809b978d1a50800/cli_watch_kit-0.1.0-py3-none-any.whl", hash = "sha256:a154d6a1555672a95c66bd917541db53320e8f420a503213a10cfbe1a07721f0", size = 73904, upload-time = "2026-11-18T14:18:22.034Z" },
+    { url = "https://files.pythonhosted.org/packages/38/11/372ee943fa04aa8f359ece4638833772344ac2c7bea868af52260ea3151f/cli_watch_kit-0.2.1-py3-none-any.whl", hash = "sha256:40bbbafd7cb3205fe07ba0f50879951f3d0cdeb2bb310c2afe2835e55c010aa7", size = 79861, upload-time = "2026-11-20T15:38:59.867Z" },
 ]
 
 [package.optional-dependencies]
@@ -520,7 +520,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "cli-watch-kit", extras = ["claude-code"], specifier = ">=0.1.0,<0.2" },
+    { name = "cli-watch-kit", extras = ["claude-code"], specifier = ">=0.2.1,<0.3" },
     { name = "httpx", specifier = ">=0.27" },
     { name = "mcp-to-cli-kit", specifier = ">=0.5.0,<0.6" },
 ]
