@@ -3,10 +3,11 @@ name: linear-watch
 description: >-
   This skill should be used when the session has to wait for something on Linear or react to it as it happens:
   "watch this issue", "tell me when the ticket moves", "let me know when someone comments on ABC-123", "watch the
-  cycle", "watch my view", "follow the team's issues", or when a `<linear-watcher>` message arrives. Covers starting
+  cycle", "watch my view", "follow the team's issues", "tell me when something is assigned to me", "watch the team's
+  triage", or when a `<linear-watcher>` message arrives. Covers starting
   `linear watch` in the background, its startup header, event filters, reacting to its messages, stopping it, and
   the files it writes.
-trigger-keywords: linear watch, linear-watcher, watch issue, watch ticket, watch cycle, watch view
+trigger-keywords: linear watch, linear-watcher, watch issue, watch ticket, watch cycle, watch view, assigned to me, triage
 allowed-tools: Bash(linear watch issue:*), Bash(linear watch issues:*), Bash(linear watch daemon status:*), Bash(linear watch daemon logs:*), Bash(linear watch --help), Bash(linear watch daemon --help), Bash(linear watch daemon stop --help)
 ---
 
@@ -29,6 +30,8 @@ linear watch issues --team ABC                   # every issue of a team
 linear watch issues --team ABC --cycle active    # the team's active cycle; follows the rollover
 linear watch issues --team ABC --cycle 42        # one cycle by number
 linear watch issues --view 0123456789ab          # a saved view: its slugId, the hex end of its URL, or the URL
+linear watch issues --assignee me                # my open issues: reports each one newly assigned to me
+linear watch issues --team ABC --status Triage   # a team's triage: reports each issue created or moved into it
 ```
 
 - An issue watch ends when the issue is completed, canceled or archived (`watch_ended` with that reason). An issue that is already closed when the watch starts keeps being watched. An issues watch runs until stopped.
@@ -36,6 +39,25 @@ linear watch issues --view 0123456789ab          # a saved view: its slugId, the
 - `--until=<kind>` ends after the first event of that kind (`--until=state_changed`), `--timeout=<duration>` after that long, `--idle-after=<duration>` when nothing was reported for that long.
 - The API key is found as `linear mcp` finds it: the `Authorization` header in `~/.config/linear-mcp/config.yaml` (or `--config PATH`), else `LINEAR_API_KEY`. A missing or refused key exits 2 before anything starts.
 - **Start watchers from the main session.** Claude Code has no route for messages to a subagent, so a subagent's watcher would message the main session anyway. Forward the events a subagent needs with SendMessage: the event lines and the comment file paths, not a summary.
+
+### My issues and a status
+
+`--team` (repeatable), `--cycle` (with one `--team`), `--assignee me` and `--status` (repeatable) combine into one set: an issue is in it when it matches every option, and any one `--status` value. `--view` takes no other option.
+
+- `--assignee me` is the user of the API key. Without `--status` it covers the open issues: completing one is an `issue_left`, reopening one an `issue_entered`.
+- `--status` is a workflow state name, case-insensitive, in each team's own workflow; `Triage` also matches a renamed triage state. Without `--team` it covers every team the key can read, which for `Triage` can be many teams; prefer `--team ABC --team DEF --status Triage` for the teams the user handles. A name no team has exits 2 and says so; the header line `status:` says in how many teams it was found.
+- A set above 2,000 issues ends at once with `watch_ended` reason `too_large` (a team-less `--status Done`, say). Narrow it with `--team`, `--assignee me` or `--cycle`.
+- Wait for the next one: `--until=issue_entered`. Only the queue: `--events=scope`.
+
+### What was there before the watch started
+
+The start is a silent baseline: issues already assigned or already in triage are not reported. When the user also wants those, catch up in this order, so nothing falls between the two:
+
+1. Start the watch in the background.
+2. Wait for its `watch_started` event: the baseline is taken.
+3. Read once with the same filter (the `linear-mcp-cli` skill): `linear mcp list-issues --assignee me --order-by updatedAt`, which also lists closed issues (look at their status), or `linear mcp list-issues --team ABC --state Triage`.
+
+An issue in both the list and a later event is fine; there is no `--since`.
 
 ### Leave `--events-stream` at its default
 
@@ -57,7 +79,7 @@ Read the header in the background task's output first. Each line starts with `li
 
 - Waiting for a ticket to move: `linear watch issue ABC-123 --events=status --until=state_changed`.
 - Following a discussion: `--events=comments`.
-- A cycle or view as a queue: `--events=scope` reports only issues entering and leaving.
+- A cycle, view, my issues or a triage as a queue: `--events=scope` reports only issues entering and leaving.
 
 ## The messages
 
@@ -85,7 +107,9 @@ Each batch arrives as one message, one JSON event per line:
 | `comment_created`, `comment_edited`, `comment_resolved`, `comment_unresolved` | all | `comment_id`, `parent_id`, `author`, `excerpt`; the comment file in `artifacts` |
 | `comment_deleted` | issue | `comment_id` |
 | `attachment_added` | all | `attachment_title`, `attachment_url`, `source` (`gitlab`, `github`, …): how merge requests and pull requests show up |
-| `issue_entered`, `issue_left` | team, cycle, view | `state`; `issue_left` also `reason` (`moved`, `archived`, `relisted`) |
+| `issue_entered`, `issue_left` | team, cycle, view, filter | `state`, `assignee`; `issue_left` also `reason` (`moved`, `archived`, `relisted`) |
+| `issue_entered` | filter (`--assignee`, `--status`, several `--team`) | also `reason` (`created`, `assigned`, `status_changed`, `moved`, `null` before Linear's history has the row), `actor`, `actor_is_me`, `team`, `priority`, `created_at`; with `assigned` `from` (the previous assignee), with `status_changed` `from_state` and `from_type` (`completed` for a reopen), with `moved` `from_team` |
+| `issue_left` | filter | `reason` also `status_changed` (`to`, `to_type`: `backlog` or `unstarted` for an accepted triage issue, `canceled` for a declined one, `completed`) or `reassigned` (`to`: the new assignee) |
 | `active_cycle_changed` | cycle with `--cycle active` | `team`, `from`, `to` (cycle numbers) |
 
 Reactions to comments are not reported.
@@ -96,8 +120,10 @@ Reactions to comments are not reported.
 - **`comment_created`, `comment_edited`**: read only the comment file in `artifacts`, and note who wrote it.
 - **`attachment_added`** with a merge request or pull request: the work on the issue has a review to follow.
 - **`issue_entered`, `issue_left`**: a queue changed; act as the caller's purpose says.
+- **`issue_entered` with `reason: assigned` and `actor_is_me: false`**: someone gave the user an issue; tell the user who and what. With `actor_is_me: true` the user took it themselves, which needs no news.
+- **`issue_entered` into a triage**: a new item to triage; read it once with `linear mcp get-issue --id <issue>` before saying what it is about.
 - **`watch_degraded`**: `auth`, tell the user the key was refused; `rate_limited`, nothing to do, the daemon waits; `not_found`, check the ID; `error`, nothing to do unless it repeats.
-- **`watch_ended`**: the reason says why: `completed`, `canceled`, `archived`, `not_found`, `until`, `timeout`, `idle`, `session_gone`, or a signal.
+- **`watch_ended`**: the reason says why: `completed`, `canceled`, `archived`, `not_found`, `too_large`, `until`, `timeout`, `idle`, `session_gone`, or a signal.
 
 ## Stopping
 
@@ -105,7 +131,7 @@ Stop a watcher by stopping its background task. To change a filter, stop it and 
 
 ## The files
 
-Each resource has one dir under the session scratchpad, `linear-watch/<workspace>/issues/<ID>`, `…/teams/<KEY>`, `…/teams/<KEY>/cycles/<N|active>` or `…/views/<slugId>`, with a `README.txt`:
+Each resource has one dir under the session scratchpad, `linear-watch/<workspace>/issues/<ID>`, `…/teams/<KEY>`, `…/teams/<KEY>/cycles/<N|active>`, `…/views/<slugId>` or `…/filters/<filter>` (`assignee-me`, `team-ABC-status-triage`), with a `README.txt`:
 
 - `events.jsonl`: every event; `state.json`: the newest snapshot; `baseline.json`: what the watcher resumes from.
 - `comments/`: one Markdown file per reported comment.
@@ -117,3 +143,4 @@ Each resource has one dir under the session scratchpad, `linear-watch/<workspace
 - Changes are seen within the poll interval (30 s for an issue, 60 s for an issues watch) plus up to 5 s.
 - A deleted comment is reported only by an issue watch. A view's membership is checked against Linear's own view list every 10 minutes and whenever the view changes, so an issue that leaves a view without being changed itself (a relative date filter) is reported up to 10 minutes late.
 - An issues watch on a team starts from its open issues; an old closed issue that gets a change is followed from then on without an `issue_entered`.
+- An issue that enters a filter and leaves it again within one poll (assigned and unassigned, triaged within a minute) is not reported. A state renamed while a `--status` watch runs makes its issues leave as `relisted` within 10 minutes.
