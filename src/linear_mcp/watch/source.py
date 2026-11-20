@@ -85,7 +85,8 @@ OVERLAP = timedelta(seconds=5)
 RELIST_EVERY = 600.0
 MAX_PAGES = 4
 MAX_COMMENTS = 400
-ESTIMATE = {"issue": 25.0, "scope": 60.0, "baseline": 400.0}
+# Complexity points per target and tick until X-Complexity corrects them; a team or cycle tick measured about 160.
+ESTIMATE = {"issue": 25.0, "scope": 160.0, "baseline": 400.0}
 
 
 def iso(moment: datetime) -> str:
