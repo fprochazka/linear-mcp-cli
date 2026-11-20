@@ -13,10 +13,15 @@ COMMENT_FIELDS = (
 HISTORY_FIELDS = (
     "id createdAt actor { id name } botActor { name } toStateId toAssigneeId addedLabelIds removedLabelIds attachmentId"
 )
+# Who made an issue enter a filter, and from where: only the candidates of `filter` targets ask for these.
+ENTRY_FIELDS = "creator { id name } botActor { name }"
+ENTRY_HISTORY_FIELDS = "fromAssignee { id name } fromState { name type } toTeamId fromTeam { key } toCycleId"
 FRAGMENTS = {
     "I": f"fragment I on Issue {{ {ISSUE_FIELDS} }}\n",
     "C": f"fragment C on Comment {{ {COMMENT_FIELDS} }}\n",
     "H": f"fragment H on IssueHistory {{ {HISTORY_FIELDS} }}\n",
+    "E": f"fragment E on Issue {{ {ENTRY_FIELDS} }}\n",
+    "HE": f"fragment HE on IssueHistory {{ {ENTRY_HISTORY_FIELDS} }}\n",
 }
 
 
@@ -29,14 +34,22 @@ def with_fragments(query: str) -> str:
 CHANGED = "{or: [{updatedAt: {gt: $S}}, {comments: {some: {updatedAt: {gt: $S}}}}]}"
 
 
-def changed_issues(alias: str, filter_var: str, since_var: str, first: int) -> str:
-    """Issues of a filter that changed, or got a comment changed, since a time; with those comments and history."""
+def _changed_nodes(since_var: str, entries: bool) -> str:
+    issue, row = ("...I ...E ", "...H ...HE ") if entries else ("...I ", "...H ")
+    return (
+        f"nodes {{ {issue}"
+        f"comments(filter: {{updatedAt: {{gt: ${since_var}}}}}, first: 50, orderBy: updatedAt, includeArchived: true) "
+        f"{{ nodes {{ ...C }} }} history(first: 10) {{ nodes {{ {row}}} }} }} pageInfo {{ hasNextPage endCursor }}"
+    )
+
+
+def changed_issues(alias: str, filter_var: str, since_var: str, first: int, entries: bool = False) -> str:
+    """Issues of a filter that changed, or got a comment changed, since a time; with those comments and history,
+    and with `entries` also who created the issue and where the history rows moved it from."""
     changed = CHANGED.replace("$S", f"${since_var}")
     return (
         f"{alias}: issues(filter: {{and: [${filter_var}, {changed}]}}, first: {first}, orderBy: updatedAt, "
-        f"includeArchived: true) {{ nodes {{ ...I "
-        f"comments(filter: {{updatedAt: {{gt: ${since_var}}}}}, first: 50, orderBy: updatedAt, includeArchived: true) "
-        f"{{ nodes {{ ...C }} }} history(first: 10) {{ nodes {{ ...H }} }} }} pageInfo {{ hasNextPage endCursor }} }}"
+        f"includeArchived: true) {{ {_changed_nodes(since_var, entries)} }}"
     )
 
 
@@ -65,11 +78,22 @@ PAGE_VIEW_IDS = (
     "query ViewIds($v: String!, $after: String) { r: customView(id: $v) { issues(first: 250, after: $after) "
     "{ nodes { id } pageInfo { hasNextPage endCursor } } } }"
 )
-PAGE_CHANGED = with_fragments(
-    "query More($f: IssueFilter!, $s: DateTimeOrDuration!, $after: String) { r: issues(filter: {and: [$f, "
-    + CHANGED.replace("$S", "$s")
-    + "]}, first: 50, after: $after, orderBy: updatedAt, includeArchived: true) { nodes { ...I "
-    "comments(filter: {updatedAt: {gt: $s}}, first: 50, orderBy: updatedAt, includeArchived: true) { nodes { ...C } } "
-    "history(first: 10) { nodes { ...H } } } pageInfo { hasNextPage endCursor } } }"
-)
+
+
+def page_changed(entries: bool = False) -> str:
+    """The follow-up pages of `changed_issues`."""
+    return with_fragments(
+        "query More($f: IssueFilter!, $s: DateTimeOrDuration!, $after: String) { r: issues(filter: {and: [$f, "
+        + CHANGED.replace("$S", "$s")
+        + "]}, first: 50, after: $after, orderBy: updatedAt, includeArchived: true) { "
+        + _changed_nodes("s", entries)
+        + " } }"
+    )
+
+
+PAGE_CHANGED = page_changed()
+PAGE_CHANGED_ENTRIES = page_changed(entries=True)
 VIEWER = "query { viewer { id name organization { urlKey } } }"
+# The start check of a filter: its teams with their states, and where each status exists.
+TEAMS_STATES = "teams(filter: {key: {in: $t}}) { nodes { key states { nodes { name } } } }"
+STATES = "{alias}: workflowStates(filter: ${var}, first: 250) {{ nodes {{ team {{ key }} }} }}"

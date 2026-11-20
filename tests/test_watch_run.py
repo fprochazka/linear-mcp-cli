@@ -64,3 +64,30 @@ def test_an_issue_watch_reports_a_change_and_ends_when_the_issue_is_done(fake: F
     assert events[2]["data"]["reason"] == "completed"
     changelog = tmp_path / "example" / "issues" / "ABC-1" / "events.jsonl"
     assert [json.loads(line)["kind"] for line in changelog.read_text().splitlines()] == [e["kind"] for e in events]
+
+
+def test_a_filter_watch_prints_its_check_and_ends_when_it_is_too_large(
+    fake: FakeLinear, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(watch_cli, "check_filter", lambda key, spec, client: ["status: done (3 teams)"])
+    fake.ids = [f"uuid-{n}" for n in range(2001)]
+
+    result = CliRunner().invoke(
+        linear_group(),
+        ["watch", "issues", "--status", "Done", "--assignee", "me", "--no-daemon", "--events-stream", "stdout"]
+        + ["--base-dir", str(tmp_path), "--timeout", "30s"],
+    )
+
+    assert result.exit_code == 0, result.stderr
+    header = result.stderr.splitlines()
+    assert header[0] == "linear watch: resource: filter assignee=me,status=done"
+    assert f"linear watch: dir: {tmp_path / 'example' / 'filters' / 'assignee-me-status-done'}" in header
+    assert "linear watch: status: done (3 teams)" in header
+    assert any(
+        line.startswith("linear watch: restart with: linear watch issues --assignee me --status done ")
+        for line in header
+    )
+    events = [json.loads(line) for line in result.stdout.splitlines()]
+    assert [e["kind"] for e in events] == ["watch_started", "watch_ended"]
+    assert events[1]["data"]["reason"] == "too_large"
+    assert events[1]["data"]["issues"] == 2001

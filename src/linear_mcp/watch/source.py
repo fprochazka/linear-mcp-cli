@@ -3,12 +3,14 @@
 Targets:
 - `issue <ID>`: one issue by identifier or UUID. Several issues are several watchers, which the daemon batches.
 - `team <KEY>`, `cycle <KEY>/active|<N>`, `view <slugId>`: an issue scope.
+- `filter <parts>`: an issue scope of teams, a cycle, my issues and statuses (see `filters`). Its membership is decided
+  from the issue alone, and an issue entering it says why (created, assigned, status changed, moved) and who did it.
 
 Each target adds aliases to the tick's document. An issue watch always reads its issues, with the comments changed
 since the newest change it saw. A scope watch reads (1) its known issues that changed or got a changed comment, and
 (2) other issues of the scope that changed, which are candidates to enter. Issues leave when a change moves them out
-of the scope (team, cycle, archive) or when a relist of the scope no longer has them: on a cycle rollover, a view
-edit, and every ten minutes, because those leave the issues untouched.
+of the scope (team, cycle, archive, a filter's status or assignee) or when a relist of the scope no longer has them:
+on a cycle rollover, a view edit, and every ten minutes, because those leave the issues untouched.
 
 `since` comes from the data (the newest `updatedAt` seen), so the snapshot stays the same while nothing changes; the
 queries overlap it by a few seconds and the diff drops what was already seen.
@@ -46,6 +48,7 @@ from linear_mcp.watch.diff import (
     is_closed,
     newest,
 )
+from linear_mcp.watch.filters import FilterSpec
 from linear_mcp.watch.graphql import GraphQLResult, LinearGraphQL
 
 type Snapshot = dict[str, Any]
@@ -70,6 +73,8 @@ CATALOG = KindCatalog(
         "team": (*STATUS, *COMMENTS, *LINKS, *SCOPE),
         "cycle": (*STATUS, *COMMENTS, *LINKS, *SCOPE, "active_cycle_changed"),
         "view": (*STATUS, *COMMENTS, *LINKS, *SCOPE),
+        # active_cycle_changed only with `--cycle active`; the catalog is per kind.
+        "filter": (*STATUS, *COMMENTS, *LINKS, *SCOPE, "active_cycle_changed"),
     },
     groups={
         "status": STATUS,
@@ -84,6 +89,9 @@ SCOPE_INTERVAL = 60.0
 OVERLAP = timedelta(seconds=5)
 RELIST_EVERY = 600.0
 MAX_PAGES = 4
+MAX_FILTER_MEMBERS = 2_000
+"""A filter with more issues is refused at its first poll: its snapshot would grow past about 1 MB."""
+FILTER_PAGES = 8
 MAX_COMMENTS = 400
 # Complexity points per target and tick until X-Complexity corrects them; a team or cycle tick measured about 160.
 ESTIMATE = {"issue": 25.0, "scope": 160.0, "baseline": 400.0}
@@ -112,6 +120,8 @@ def scope_filter(target: Target, snapshot: Snapshot | None) -> dict[str, Any] | 
     if target.kind == "view":
         view = (snapshot or {}).get("view")
         return view_filter(view) if view else None
+    if target.kind == "filter":
+        return FilterSpec.from_target(target).issue_filter()
     raise ValueError(f"not a scope: {target.kind}")
 
 
@@ -120,6 +130,25 @@ def view_filter(view: Mapping[str, Any]) -> dict[str, Any]:
     if view.get("team_id"):
         parts.append({"team": {"id": {"eq": view["team_id"]}}})
     return {"and": [p for p in parts if p]} if any(parts) else {}
+
+
+def cycle_of(target: Target) -> str | None:
+    """The cycle (`active` or a number) a target follows, if any."""
+    if target.kind == "cycle":
+        return target.id.split("/", 1)[1]
+    if target.kind == "filter":
+        return FilterSpec.from_target(target).cycle
+    return None
+
+
+def team_header_key(target: Target) -> str | None:
+    """The team whose header (its active cycle) a scope target reads every tick, if any."""
+    if target.kind in ("team", "cycle"):
+        return target.id.split("/", 1)[0]
+    if target.kind == "filter":
+        spec = FilterSpec.from_target(target)
+        return spec.teams[0] if spec.cycle and len(spec.teams) == 1 else None
+    return None
 
 
 def still_in_scope(target: Target, issue: Mapping[str, Any], snapshot: Snapshot) -> bool | None:
@@ -220,12 +249,12 @@ class LinearSource(Source[Snapshot]):
         else:
             old_members, new_members = previous.get("members") or {}, current.get("members") or {}
             before_cycle, after_cycle = previous.get("active_cycle"), current.get("active_cycle")
-            if target.kind == "cycle" and _id(before_cycle) != _id(after_cycle):
+            if cycle_of(target) == "active" and _id(before_cycle) != _id(after_cycle):
                 found.append(
                     RawEvent(
                         "active_cycle_changed",
                         {
-                            "team": target.id.split("/")[0],
+                            "team": team_header_key(target),
                             "from": (before_cycle or {}).get("number"),
                             "to": (after_cycle or {}).get("number"),
                         },
@@ -307,12 +336,12 @@ class LinearSource(Source[Snapshot]):
     # Follow-up requests, each charged to the poll through the context.
 
     async def pages(
-        self, ctx: PollContext, document: str, variables: dict[str, Any], path: str
+        self, ctx: PollContext, document: str, variables: dict[str, Any], path: str, max_pages: int = MAX_PAGES
     ) -> list[dict[str, Any]]:
         key = str(ctx.params["api_key"])
         nodes: list[dict[str, Any]] = []
         after: str | None = None
-        for _ in range(MAX_PAGES):
+        for _ in range(max_pages):
             result = await self.client.query(key, document, {**variables, "after": after}, ctx)
             error = result.error_for("r")
             if error is not None:
@@ -455,16 +484,26 @@ class IssuePlan(Plan):
 
 
 class ScopePlan(Plan):
-    """A team, cycle or view watch."""
+    """A team, cycle, view or filter watch."""
+
+    def __init__(self, source: LinearSource, item: PollItem[Snapshot], ctx: PollContext, n: int) -> None:
+        super().__init__(source, item, ctx, n)
+        self.spec = FilterSpec.from_target(self.target) if self.target.kind == "filter" else None
+        # A team's history is unbounded: it starts from the open issues, then follows what changes.
+        self.open_only = self.target.kind == "team" or (self.spec is not None and self.spec.teams_only)
 
     def add(self, doc: Document) -> None:
         snapshot = self.snapshot
+        team = team_header_key(self.target)
         if self.target.kind == "view":
             v = doc.var(f"v{self.n}k", "String!", self.target.id)
             doc.selections.append(q.VIEW.format(alias=f"v{self.n}", var=v))
-        else:
-            t = doc.var(f"t{self.n}k", "String!", self.target.id.split("/", 1)[0])
+        elif team is not None:
+            t = doc.var(f"t{self.n}k", "String!", team)
             doc.selections.append(q.TEAM.format(alias=f"t{self.n}", var=t))
+        elif snapshot is None:
+            # A filter without a team header still needs a response for Linear's time, where its baseline starts.
+            doc.selections.append(f"n{self.n}: viewer {{ id }}")
         scope = scope_filter(self.target, snapshot)
         if snapshot is None or scope is None:
             return
@@ -476,21 +515,26 @@ class ScopePlan(Plan):
             doc.selections.append(q.changed_issues(f"k{self.n}", m, s, 100))
         candidates = {"and": [scope, {"id": {"nin": members}}]} if members else scope
         c = doc.var(f"c{self.n}", "IssueFilter!", candidates)
-        doc.selections.append(q.changed_issues(f"e{self.n}", c, s, 50))
+        doc.selections.append(q.changed_issues(f"e{self.n}", c, s, 50, entries=self.spec is not None))
 
     def header(self, result: GraphQLResult) -> dict[str, Any]:
-        alias = f"v{self.n}" if self.target.kind == "view" else f"t{self.n}"
+        if self.target.kind == "view":
+            alias, what, name = f"v{self.n}", "view", self.target.id
+        else:
+            team = team_header_key(self.target)
+            if team is None:
+                return {}
+            alias, what, name = f"t{self.n}", "team", team
         error = result.error_for(alias)
         if error is not None:
             raise error
         node = result.data.get(alias)
         if not node:
-            what = "view" if self.target.kind == "view" else "team"
-            raise NotFound(f"no {what} {self.target.id.split('/', 1)[0]} (or no access to it)")
+            raise NotFound(f"no {what} {name} (or no access to it)")
         return dict(node)
 
-    async def relist(self, snapshot: Snapshot, baseline: bool) -> list[dict[str, Any]]:
-        """The scope's issues as the server sees them now, with the issue fields."""
+    async def relist(self, snapshot: Snapshot, baseline: bool) -> tuple[list[dict[str, Any]], bool]:
+        """The scope's issues as the server sees them now, with the issue fields, and whether that is all of them."""
         ctx = self.ctx
         if self.target.kind == "view":
             ids = [n["id"] for n in await self.source.pages(ctx, q.PAGE_VIEW_IDS, {"v": self.target.id}, "issues")]
@@ -498,21 +542,81 @@ class ScopePlan(Plan):
             fetch = ids if baseline else [i for i in ids if i not in members]
             fetched = {n["id"]: n for n in await self.source.issues_by_id(ctx, fetch)}
             # Known members keep their stored state here; their changes come from the change query.
-            return [fetched.get(i, {"id": i, "_known": True}) for i in ids]
-        scope = scope_filter(self.target, snapshot)
-        assert scope is not None
-        if self.target.kind == "team":
-            # A team's history is unbounded: start from its open issues, then follow what changes.
-            scope = {"and": [scope, {"state": {"type": {"nin": ["completed", "canceled"]}}}]}
+            return [fetched.get(i, {"id": i, "_known": True}) for i in ids], True
+        scope = self.relist_filter(snapshot)
         if baseline:
-            return await self.source.pages(ctx, q.PAGE_ISSUES, {"f": scope}, "")
-        ids = await self._ids(scope)
+            pages = FILTER_PAGES if self.spec is not None else MAX_PAGES
+            return await self.source.pages(ctx, q.PAGE_ISSUES, {"f": scope}, "", pages), True
+        ids, complete = await self._ids(scope)
         members = snapshot.get("members") or {}
         fetched = {n["id"]: n for n in await self.source.issues_by_id(ctx, [i for i in ids if i not in members])}
-        return [fetched.get(i, {"id": i, "_known": True}) for i in ids]
+        return [fetched.get(i, {"id": i, "_known": True}) for i in ids], complete
 
-    async def _ids(self, scope: dict[str, Any]) -> list[str]:
-        return [n["id"] for n in await self.source.pages(self.ctx, q.PAGE_IDS, {"f": scope}, "")]
+    def relist_filter(self, snapshot: Snapshot) -> dict[str, Any]:
+        scope = scope_filter(self.target, snapshot)
+        assert scope is not None
+        if self.open_only:
+            scope = {"and": [scope, {"state": {"type": {"nin": ["completed", "canceled"]}}}]}
+        return scope
+
+    async def _ids(self, scope: dict[str, Any]) -> tuple[list[str], bool]:
+        """The ids of the scope's issues, and whether that is all of them: a filter pages one page past its cap."""
+        pages = FILTER_PAGES + 1 if self.spec is not None else MAX_PAGES
+        ids = [n["id"] for n in await self.source.pages(self.ctx, q.PAGE_IDS, {"f": scope}, "", pages)]
+        return ids, len(ids) < pages * 250
+
+    def entry(self, issue: Mapping[str, Any], node: Mapping[str, Any], since: str | None) -> dict[str, Any]:
+        """The data of `issue_entered`; for a filter also why the issue entered, who made it, and from where."""
+        data = {
+            **_ref(issue),
+            "state": (issue.get("state") or {}).get("name"),
+            "assignee": (issue.get("assignee") or {}).get("name"),
+        }
+        if self.spec is None:
+            return data
+        data.update(self.why(issue, node, since))
+        data.update(team=issue.get("team"), priority=issue.get("priority"), created_at=issue.get("createdAt"))
+        return data
+
+    def why(self, issue: Mapping[str, Any], node: Mapping[str, Any], since: str | None) -> dict[str, Any]:
+        """From the history rows newer than `since`, in the order assignee, team, status, cycle. Rows lag the issue
+        by a few seconds: an entry without its row has no reason and no actor rather than a guessed one."""
+        assert self.spec is not None
+        spec = self.spec
+        if since is not None and str(issue.get("createdAt") or "") > since:
+            creator, bot = node.get("creator"), node.get("botActor")
+            name = (creator or {}).get("name") or (f"{bot['name']} (bot)" if bot and bot.get("name") else None)
+            mine = bool(creator and self.viewer and creator.get("id") == self.viewer)
+            return {"reason": "created", "actor": name, "actor_is_me": mine}
+        actors = Actors((node.get("history") or {}).get("nodes") or [], since, self.viewer)
+        row: Mapping[str, Any] | None
+        if spec.assignee_me and self.viewer and (row := actors.row(toAssigneeId=self.viewer)):
+            return {"reason": "assigned", "from": (row.get("fromAssignee") or {}).get("name"), **actors.who(row)}
+        team_id = (node.get("team") or {}).get("id")
+        if team_id and (row := actors.row(toTeamId=team_id)):
+            # A move to another team changes the state in the same row: the move is the news.
+            return {"reason": "moved", "from_team": (row.get("fromTeam") or {}).get("key"), **actors.who(row)}
+        state_id = (issue.get("state") or {}).get("id")
+        if (spec.statuses or spec.assignee_me) and state_id and (row := actors.row(toStateId=state_id)):
+            from_state = row.get("fromState") or {}
+            return {
+                "reason": "status_changed",
+                "from_state": from_state.get("name"),
+                "from_type": from_state.get("type"),
+                **actors.who(row),
+            }
+        cycle_id = (node.get("cycle") or {}).get("id")
+        if spec.cycle and cycle_id and (row := actors.row(toCycleId=cycle_id)):
+            return {"reason": "moved", **actors.who(row)}
+        return {"reason": None, **actors.who(None)}
+
+    def leave(self, issue: Mapping[str, Any], snapshot: Snapshot) -> dict[str, Any] | None:
+        """The reason (and where to) a changed known issue leaves the scope, or `None` while it stays in."""
+        if self.spec is not None:
+            return self.spec.outside(issue, self.viewer, snapshot.get("active_cycle"))
+        if still_in_scope(self.target, issue, snapshot) is False:
+            return {"reason": "archived" if issue.get("archivedAt") else "moved"}
+        return None
 
     async def finish(self, result: GraphQLResult) -> PollOutcome[Snapshot]:
         head = self.header(result)
@@ -525,19 +629,16 @@ class ScopePlan(Plan):
         events: list[RawEvent] = []
         relist_due = previous is None or self.source.clock() - self.item.state.get("relisted_at", 0.0) > RELIST_EVERY
 
-        if self.target.kind == "cycle":
+        cycle = cycle_of(self.target)
+        if cycle is not None:
             snapshot["active_cycle"] = head.get("activeCycle")
             before = (previous or {}).get("active_cycle")
-            if (
-                previous is not None
-                and self.target.id.endswith("/active")
-                and _id(before) != _id(head.get("activeCycle"))
-            ):
+            if previous is not None and cycle == "active" and _id(before) != _id(head.get("activeCycle")):
                 events.append(
                     RawEvent(
                         "active_cycle_changed",
                         {
-                            "team": self.target.id.split("/")[0],
+                            "team": team_header_key(self.target),
                             "from": (before or {}).get("number"),
                             "to": (head.get("activeCycle") or {}).get("number"),
                         },
@@ -555,7 +656,11 @@ class ScopePlan(Plan):
                 relist_due = True
 
         if previous is None:
-            nodes = await self.relist(snapshot, baseline=True)
+            if self.spec is not None:
+                too_large = await self.too_large(snapshot)
+                if too_large is not None:
+                    return PollOutcome(None, ended="too_large", end_data=too_large)
+            nodes, _ = await self.relist(snapshot, baseline=True)
             snapshot["members"] = {n["id"]: compact_issue(n) for n in nodes}
             seen = [i.get("updatedAt") for i in snapshot["members"].values()]
             snapshot["since"] = newest([*seen, self.now_iso(result, seen)])
@@ -584,24 +689,20 @@ class ScopePlan(Plan):
             actors = Actors((node.get("history") or {}).get("nodes") or [], since_q, self.viewer)
             events += attachment_details(diff_issue(old, issue, actors), node)
             comment_events(node, issue)
-            inside = still_in_scope(self.target, issue, snapshot)
-            if inside is False:
+            left = self.leave(issue, snapshot)
+            if left is not None:
                 members.pop(issue["id"], None)
-                reason = "archived" if issue.get("archivedAt") else "moved"
-                events.append(
-                    RawEvent(
-                        "issue_left", {**_ref(issue), "reason": reason, "state": (issue.get("state") or {}).get("name")}
-                    )
-                )
+                data = {**_ref(issue), "reason": left.pop("reason"), "state": (issue.get("state") or {}).get("name")}
+                events.append(RawEvent("issue_left", {**data, **left}))
             else:
                 members[issue["id"]] = issue
-                if inside is None:
-                    candidates = True  # a view: whether it still matches is settled by the relist
+                if self.target.kind == "view":
+                    candidates = True  # whether it still matches is settled by the relist
 
         scope = scope_filter(self.target, previous)
         if scope is not None:
             nin = {"and": [scope, {"id": {"nin": sorted(members)}}]} if members else scope
-            for node in await self._connection(result, f"e{self.n}", nin, since_q):
+            for node in await self._connection(result, f"e{self.n}", nin, since_q, entries=self.spec is not None):
                 issue = compact_issue(node)
                 stamps.append(issue.get("updatedAt"))
                 if issue["id"] in members:
@@ -609,30 +710,22 @@ class ScopePlan(Plan):
                 if self.target.kind == "view":
                     candidates = True
                     continue
-                if self.target.kind == "team" and is_closed(issue) and str(issue.get("createdAt") or "") <= since_q:
+                if self.open_only and is_closed(issue) and str(issue.get("createdAt") or "") <= since_q:
                     # An old closed issue that got touched: follow it from now on without announcing it.
                     members[issue["id"]] = issue
                     comment_events(node, issue)
                     continue
                 members[issue["id"]] = issue
-                events.append(
-                    RawEvent(
-                        "issue_entered",
-                        {
-                            **_ref(issue),
-                            "state": (issue.get("state") or {}).get("name"),
-                            "assignee": (issue.get("assignee") or {}).get("name"),
-                        },
-                    )
-                )
+                events.append(RawEvent("issue_entered", self.entry(issue, node, since_q)))
                 comment_events(node, issue)
 
         if self.target.kind == "view" and candidates:
             relist_due = True
-        if relist_due and self.target.kind in ("cycle", "view"):
-            nodes = await self.relist(snapshot, baseline=False)
+        if relist_due and self.target.kind in ("cycle", "view", "filter"):
+            nodes, complete = await self.relist(snapshot, baseline=False)
             now_ids = {n["id"] for n in nodes}
-            for uid in sorted(set(members) - now_ids):
+            # A relist cut short by the page limit cannot tell which issues left.
+            for uid in sorted(set(members) - now_ids) if complete else []:
                 issue = members.pop(uid)
                 events.append(
                     RawEvent(
@@ -645,24 +738,27 @@ class ScopePlan(Plan):
                     continue
                 issue = compact_issue(node)
                 members[issue["id"]] = issue
-                events.append(
-                    RawEvent(
-                        "issue_entered",
-                        {
-                            **_ref(issue),
-                            "state": (issue.get("state") or {}).get("name"),
-                            "assignee": (issue.get("assignee") or {}).get("name"),
-                        },
-                    )
-                )
+                events.append(RawEvent("issue_entered", self.entry(issue, node, since_q)))
             self.item.state["relisted_at"] = self.source.clock()
 
         snapshot["since"] = newest(stamps, since)
         snapshot["comments"] = _prune(snapshot["comments"])
         return PollOutcome(snapshot, events)
 
+    async def too_large(self, snapshot: Snapshot) -> dict[str, Any] | None:
+        """The `watch_ended` data when a filter has more issues than its cap, counted by their ids; else `None`."""
+        ids, complete = await self._ids(self.relist_filter(snapshot))
+        if len(ids) <= MAX_FILTER_MEMBERS:
+            return None
+        return {
+            "issues": len(ids) if complete else f"at least {len(ids)}",
+            "limit": MAX_FILTER_MEMBERS,
+            "message": f"the filter matches more than {MAX_FILTER_MEMBERS:,} issues; narrow it with --team,"
+            " --assignee me or --cycle",
+        }
+
     async def _connection(
-        self, result: GraphQLResult, alias: str, filter_: dict[str, Any], since: str
+        self, result: GraphQLResult, alias: str, filter_: dict[str, Any], since: str, entries: bool = False
     ) -> list[dict[str, Any]]:
         if alias not in result.data and alias not in result.errors:
             return []
@@ -673,7 +769,8 @@ class ScopePlan(Plan):
         nodes = list(connection.get("nodes") or [])
         info = connection.get("pageInfo") or {}
         if info.get("hasNextPage"):
-            nodes += await self.source.pages(self.ctx, q.PAGE_CHANGED, {"f": filter_, "s": since}, "")
+            document = q.PAGE_CHANGED_ENTRIES if entries else q.PAGE_CHANGED
+            nodes += await self.source.pages(self.ctx, document, {"f": filter_, "s": since}, "")
             seen: dict[str, dict[str, Any]] = {}
             for node in nodes:
                 seen[node["id"]] = node

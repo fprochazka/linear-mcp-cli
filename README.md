@@ -88,19 +88,31 @@ linear watch issue ABC-123                         # one issue, by identifier or
 linear watch issues --team ABC                     # a team's issues
 linear watch issues --team ABC --cycle active      # the active cycle, following the rollover (or --cycle 42)
 linear watch issues --view <slugId|view URL>       # a saved view
+linear watch issues --assignee me                  # my open issues: reports the ones newly assigned to me, created for me or reopened
+linear watch issues --team ABC --status Triage     # a team's triage: reports issues created or moved into it, and triaged out
+linear watch issues --status Triage                # the triage of every team the key can read
 linear watch daemon status|stop|logs
 ```
 
-- Events: state, assignee, delegate, priority, title, labels, project and cycle changes; comments created, edited, resolved, unresolved and (issue watch only) deleted, each with the comment saved as a Markdown file; attachments added (merge requests, pull requests); issues entering and leaving a team, cycle or view; the active cycle rolling over. `--events` / `--exclude-events` take kinds or the groups `status`, `comments`, `links`, `scope`; `--until`, `--timeout` and `--idle-after` end a watch early.
-- All watches on the machine share one daemon, which polls every watched issue, team, cycle and view of one Linear user in one GraphQL request per tick (30 s for issues, 60 s for issues watches), paced on the rate limits Linear reports. `--no-daemon` polls inside the watcher instead.
+`--team` (repeatable), `--cycle` (with one `--team`), `--assignee me` and `--status` (repeatable) combine: an issue is in the set when it matches every option given, and any one of the `--status` values. `--view` takes no other option.
+
+- `--status` matches the workflow state's name, case-insensitively, in each team's own workflow; `triage` also matches a renamed triage state. A name that no team has (or with `--team`, that the team does not have) exits 2 before anything starts; the header says in how many teams it was found.
+- `--assignee me` is the user of the API key. Without `--status` it covers the open issues, so completing one makes it leave and reopening it makes it enter; `--assignee me --status Done` follows the completed ones.
+- An issue entering such a filter comes with a `reason` (`created`, `assigned`, `status_changed`, `moved`, or `null` when Linear's history has no row for it yet), `actor` and `actor_is_me` (also `true` for your own self-assignments), `from`, `from_state`/`from_type` or `from_team`, and `team`, `priority`, `created_at`. One leaving has a `reason` (`status_changed`, `reassigned`, `moved`, `archived`, `relisted`) and `to`, plus `to_type` for a status change.
+- A filter with more than 2,000 issues ends at its first poll with `watch_ended` reason `too_large`; narrow it with `--team`, `--assignee me` or `--cycle`. A team-less `--status Done` is such a filter.
+- The watch starts silently: what is in the set when it starts is the baseline, and only what enters after it is reported. To see what is already there, start the watch, wait for its `watch_started` event, then read once with `linear mcp list-issues` (`--assignee me`, or `--team ABC --state Triage`). In this order nothing falls between the two; an issue in both is fine.
+
+- Events: state, assignee, delegate, priority, title, labels, project and cycle changes; comments created, edited, resolved, unresolved and (issue watch only) deleted, each with the comment saved as a Markdown file; attachments added (merge requests, pull requests); issues entering and leaving a team, cycle, view or filter; the active cycle rolling over. `--events` / `--exclude-events` take kinds or the groups `status`, `comments`, `links`, `scope`; `--until`, `--timeout` and `--idle-after` end a watch early.
+- All watches on the machine share one daemon, which polls every watched issue, team, cycle, view and filter of one Linear user in one GraphQL request per tick (30 s for issues, 60 s for issues watches), paced on the rate limits Linear reports. `--no-daemon` polls inside the watcher instead.
 - The key is found as `linear mcp` finds it: the `Authorization` header in `~/.config/linear-mcp/config.yaml` (or `--config PATH`) wins over `LINEAR_API_KEY`. The daemon gets it over a private socket.
 - To watch several issues, start one watch per issue; the daemon polls them together.
-- Files: `<base>/<workspace>/issues/<ID>`, `.../teams/<KEY>[/cycles/<N|active>]`, `.../views/<slugId>`, each with `events.jsonl`, `state.json`, `baseline.json` and `comments/`. The base is the Claude Code session's scratchpad, else a temp dir, or `--base-dir`.
+- Files: `<base>/<workspace>/issues/<ID>`, `.../teams/<KEY>[/cycles/<N|active>]`, `.../views/<slugId>`, `.../filters/<filter>` (such as `assignee-me` or `team-ABC-status-triage`), each with `events.jsonl`, `state.json`, `baseline.json` and `comments/`. The base is the Claude Code session's scratchpad, else a temp dir, or `--base-dir`.
 
 Built on [cli-watch-kit](https://github.com/fprochazka/cli-watch-kit).
 
 ## Changes from the previous version
 
+- `linear watch issues` takes `--assignee me` and `--status <name>`, and `--team` can be repeated, to follow the issues newly assigned to you and the issues entering a team's triage. Watches started by an older version run on their own daemon until it exits.
 - `linear watch` is new: it follows issues, teams, cycles and views and reports their changes as events, with a `linear-watch` skill for Claude Code.
 - The command is now `linear mcp <tool>`. `linear-mcp <tool>` still works and is the same command; the config file, the cache and the `LINEAR_MCP_` variables keep their names.
 - The config shape changed. The old `linear.api_key` and `mcp_server:` keys are gone; a config file that still uses them fails with "linear: Extra inputs are not permitted" (exit 2). Put the key into `servers.linear.headers.Authorization` as `Bearer <key>`, as shown above. The old environment overrides `LINEAR_MCP_LINEAR__API_KEY`, `LINEAR_MCP_MCP_SERVER__TIMEOUT` and `LINEAR_MCP_MCP_SERVER__SSE_READ_TIMEOUT` are ignored too; use `LINEAR_API_KEY` and `LINEAR_MCP_SERVERS__LINEAR__TIMEOUT` / `LINEAR_MCP_SERVERS__LINEAR__SSE_READ_TIMEOUT` (or any other `LINEAR_MCP_SERVERS__LINEAR__*` key). With `-v` the CLI lists the variables it ignored.

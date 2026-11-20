@@ -32,6 +32,9 @@ LATER = "2026-01-10T10:01:30.000Z"
 TODO = {"id": "state-todo", "name": "Todo", "type": "unstarted"}
 DOING = {"id": "state-doing", "name": "In Progress", "type": "started"}
 DONE = {"id": "state-done", "name": "Done", "type": "completed"}
+TRIAGE = {"id": "state-triage", "name": "Triage", "type": "triage"}
+BACKLOG = {"id": "state-backlog", "name": "Backlog", "type": "backlog"}
+DECLINED = {"id": "state-declined", "name": "Declined", "type": "canceled"}
 
 
 def issue(
@@ -46,7 +49,10 @@ def issue(
     all_comments: Sequence[str] | None = None,
     history: Sequence[Mapping[str, Any]] = (),
     assignee: str | None = None,
+    creator: str | None = None,
+    bot: str | None = None,
 ) -> dict[str, Any]:
+    """An issue node; `assignee="me"` assigns it to the viewer."""
     return {
         "id": f"uuid-{identifier}",
         "identifier": identifier,
@@ -67,6 +73,8 @@ def issue(
         "comments": {"nodes": list(comments)},
         "allComments": {"nodes": [{"id": c} for c in (all_comments if all_comments is not None else [])]},
         "history": {"nodes": list(history)},
+        "creator": {"id": f"user-{creator}", "name": creator} if creator else None,
+        "botActor": {"name": bot} if bot else None,
     }
 
 
@@ -95,10 +103,11 @@ def comment(
 
 
 def history(created: str, *, actor: str = VIEWER, **fields: Any) -> dict[str, Any]:
+    """A history row by the viewer, or by `actor="user-<Name>"`."""
     return {
         "id": f"h-{created}",
         "createdAt": created,
-        "actor": {"id": actor, "name": "Me"},
+        "actor": {"id": actor, "name": "Me" if actor == VIEWER else actor.removeprefix("user-")},
         "botActor": None,
         **fields,
     }
@@ -114,6 +123,8 @@ class FakeLinear:
     pages: list[dict[str, Any]] = field(default_factory=list)
     ids: list[str] = field(default_factory=list)
     view_ids: list[str] = field(default_factory=list)
+    check: dict[str, Any] = field(default_factory=dict)
+    """The answer to the start check of a filter's teams and statuses."""
     fail: tuple[int, dict[str, str], dict[str, Any]] | None = None
     server_time: datetime = NOW
     script: list[dict[str, Any]] = field(default_factory=list)
@@ -153,6 +164,8 @@ class FakeLinear:
             data = {"r": connection([{"id": i} for i in self.ids])}
         elif "query ViewIds" in query:
             data = {"r": {"issues": connection([{"id": i} for i in self.view_ids])}}
+        elif "query Check" in query:
+            data = dict(self.check)
         elif "viewer" in query:
             data = {"viewer": {"id": VIEWER, "name": "Me", "organization": {"urlKey": "example"}}}
         else:

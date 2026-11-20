@@ -88,7 +88,7 @@ class Actors:
         self.rows = [r for r in rows if since is None or str(r.get("createdAt") or "") > since]
         self.viewer = viewer
 
-    def _who(self, row: Mapping[str, Any] | None) -> dict[str, Any]:
+    def who(self, row: Mapping[str, Any] | None) -> dict[str, Any]:
         if row is None:
             return {"actor": None, "actor_is_me": False}
         actor = row.get("actor")
@@ -96,20 +96,24 @@ class Actors:
         name = _name(actor) or (f"{_name(bot)} (bot)" if _name(bot) else None)
         return {"actor": name, "actor_is_me": bool(actor and self.viewer and actor.get("id") == self.viewer)}
 
-    def find(self, **match: Any) -> dict[str, Any]:
+    def row(self, **match: Any) -> Mapping[str, Any] | None:
+        """The newest row with these values."""
         for row in self.rows:
             if all((row.get(k) in v) if isinstance(v, (set, frozenset)) else row.get(k) == v for k, v in match.items()):
-                return self._who(row)
-        return self._who(None)
+                return row
+        return None
+
+    def find(self, **match: Any) -> dict[str, Any]:
+        return self.who(self.row(**match))
 
     def with_labels(self) -> dict[str, Any]:
         for row in self.rows:
             if row.get("addedLabelIds") or row.get("removedLabelIds"):
-                return self._who(row)
-        return self._who(None)
+                return self.who(row)
+        return self.who(None)
 
     def newest(self) -> dict[str, Any]:
-        return self._who(self.rows[0] if self.rows else None)
+        return self.who(self.rows[0] if self.rows else None)
 
 
 def diff_issue(old: Issue, new: Issue, actors: Actors) -> list[RawEvent]:

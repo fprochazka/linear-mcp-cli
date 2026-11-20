@@ -1,6 +1,7 @@
 """The resource dir of one watch: `state.json` from each snapshot, and one Markdown file per reported comment.
 
-Layout: `<base>/<workspace>/issues/<ID>`, `.../teams/<KEY>`, `.../teams/<KEY>/cycles/<N|active>`, `.../views/<slugId>`.
+Layout: `<base>/<workspace>/issues/<ID>`, `.../teams/<KEY>`, `.../teams/<KEY>/cycles/<N|active>`, `.../views/<slugId>`,
+`.../filters/<canonical filter>` (`assignee-me`, `team-ABC-status-triage`).
 """
 
 from __future__ import annotations
@@ -35,6 +36,8 @@ def resource_dir(workspace: str) -> Any:
         if target.kind == "cycle":
             key, cycle = target.id.split("/", 1)
             return root / "teams" / sanitize_part(key) / "cycles" / sanitize_part(cycle)
+        if target.kind == "filter":
+            return root / "filters" / sanitize_part(target.id)
         return root / "views" / sanitize_part(target.id)
 
     return place

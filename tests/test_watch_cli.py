@@ -74,8 +74,8 @@ def test_a_missing_key_is_a_usage_error_before_anything_is_contacted(home: Path)
     assert "LINEAR_API_KEY, which is not set" in result.stderr
 
 
-def test_watch_issues_needs_exactly_one_scope() -> None:
+def test_watch_issues_needs_a_scope() -> None:
     result = CliRunner().invoke(linear_group(), ["watch", "issues", "--cycle", "active"])
 
     assert result.exit_code == 2
-    assert "exactly one of --view and --team" in result.stderr
+    assert "give --view, --team, --assignee me or --status" in result.stderr
