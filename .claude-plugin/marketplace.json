@@ -8,7 +8,7 @@
     {
       "name": "linear-mcp-cli",
       "description": "Skills for querying and updating Linear with the linear CLI (linear mcp <tool>) and for following issues as they change with linear watch",
-      "version": "0.4.1",
+      "version": "0.4.2",
       "author": {
         "name": "Filip Procházka"
       },
